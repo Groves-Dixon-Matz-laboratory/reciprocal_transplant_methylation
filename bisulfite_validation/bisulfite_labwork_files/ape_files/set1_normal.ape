@@ -1,0 +1,33 @@
+LOCUS       set1_normal              591 bp ds-DNA     linear       12-DEC-2016
+DEFINITION  .
+ACCESSION   
+VERSION     
+SOURCE      .
+  ORGANISM  .
+COMMENT     
+COMMENT     ApEinfo:methylated:1
+FEATURES             Location/Qualifiers
+     misc_feature    481..511
+                     /label=reverse
+                     /ApEinfo_fwdcolor="cyan"
+                     /ApEinfo_revcolor="green"
+                     /ApEinfo_graphicformat="arrow_data {{0 1 2 0 0 -1} {} 0}
+                     width 5 offset 0"
+     misc_feature    349..376
+                     /label=forward
+                     /ApEinfo_fwdcolor="cyan"
+                     /ApEinfo_revcolor="green"
+                     /ApEinfo_graphicformat="arrow_data {{0 1 2 0 0 -1} {} 0}
+                     width 5 offset 0"
+ORIGIN
+        1 GATATTTCCA CATCCCTCTG CATGGTTTCC TCTCAACTAC ACGTATGAAA CTAAGGAGAT
+       61 CGAGAACCGC ACAACCTCCG GGGTCAAGGA GCACGAGGTT TACTTATCCC TAGGTCCTGA
+      121 CGGGTCACAA GATGGCTCAT ATTTTTTCCG TGGCAACTCC ATTACTTTTT CCGCCAGTAA
+      181 GCTGGACATC GGGTTTCCAA TAACAATTGT ATGCTGGTTG TACACTTACG ACAAGAACGC
+      241 TAAAACGGAA CGCTTCCTTC AGTACAAGGG TATTCATCTC TCAGCAAACC ATAAAGAACT
+      301 TAAACTGAGC TCATCTTCAA ATGACCAGCT CCTGACAGGA ACCTTAGCAG AAAAAGGTTG
+      361 GACATTTGTT GGAGTGTCTT ACAATAGGAC GACCGCTGAA GTAAAGTTGT GGATCGATGG
+      421 AAATGTGGTG AACTCGACCA CGCTTATAGC CCATTTCGAT TCCAATGGCC GTCAATTACT
+      481 GGAGCTGGGT GGAAATAACT TCAAAGGAAA AATAACACAA TTGATGTTAT TCAATTTAAC
+      541 CTTGACCCAA GAACAAATGC AAGGAATAAA AAGAATGATG AAGTTGCCAG G
+//

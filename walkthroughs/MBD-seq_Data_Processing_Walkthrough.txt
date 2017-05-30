@@ -1,0 +1,718 @@
+#MBD-seq_Data_Processing_WalkthroughV2.txt
+#Groves Dixon
+#Last updated 11/16/16
+
+########################################################
+############ Information on sequencing jobs ############
+########################################################
+#sequencing for this project was performed in three jobs:
+#job1-JA16231  -- 96 total raw fastq files representing 24 distinct samples
+#job2-JA16404  -- 56 total raw fastq files representing 28 distinct samples
+#job3-JA16672  -- 10 total raw fastq files representing 10 distinct samples
+#62 unique samples in total
+#All files are backed up here:
+
+
+###############################################################
+########### ORGANIZE RAW READS FROM SEQUENCING RUNS ###########
+###############################################################
+#Recommended to do this for each sequencing job alone
+
+#--------- JOB1 ---------
+#concatenate lane duplicates
+ngs_concat.pl fastq "(.+)_S(.+)_L00"
+
+#check how many files you have
+ls *.fq | wc -l
+	#24 *.fq files
+
+#--------- JOB2 ---------
+#concatenate lane duplicates
+ngs_concat.pl fastq "(.+)_S(.+)_L00"
+
+#check how many files you have
+ls *.fq | wc -l
+	#28 *.fq files 
+	
+#rename them 
+for file in *.fastq; do mv $file ${file/m/};done
+for file in *.fastq; do mv $file ${file/.fastq/}m.fastq;done
+
+#get the raw read counts for each sample type
+echo '>rawReadCounts.tsv;for file in *.fastq; do count=$(grep @D00289 $file | wc -l); echo -e "$file\t$count" >> readCounts.tsv;done' > getCounts
+launcher_creator.py -n getCounts -j getCounts -q normal -t 1:00:00 -a $allo
+sbatch getCounts.slurm
+
+#--------- JOB3 ---------
+#rename them 
+for file in *.fastq; do echo "mv $file ${file/_S*.fastq/}.fastq";done
+
+
+
+#now assemble all the files togather into a single direcotry
+ls *.fastq | wc -l
+#62 total files
+
+#get raw read counts for all samples
+echo '>rawReadCounts.tsv;for file in *.fastq; do count=$(grep @D00289 $file | wc -l); echo -e "$file\t$count" >> readCounts.tsv;done' > getCounts
+
+
+####################################
+###### NOTES ON READ TRIMMING ######
+####################################
+
+#GSAF uses NEB-Next
+#The relevent sequences are shown below:
+
+NEBNext Adapter:
+5 ́-/5Phos/GAT CGG AAG AGC ACA CGT CTG AAC TCC AGT C/ideoxyU/A CAC TCT TTC CCT ACA CGA CGC TCT TCC GAT C*T-3 ́
+
+NEBNext Adapter showing secondary structure:
+
+A-CACTCTTTCCCTACACGAC-
+|                     |GCTCTTCCGATCT-3'
+|                     |CGAGAAGGCTAG -5'
+U-CTGACCTCAAGTCTGCACA-
+
+
+NEBNext Index primer 1
+5́CAAGCAGAAGACGGCATACGAGATCGTGATGTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT3́
+
+
+#*See NEB-Next Schematic powerpoint to show the final product
+
+
+#the result is that we want to trim this from both the forward and reverse reads
+GATCGGAAGAGC
+
+
+#generic cutadapt command for paired end read trimming:
+cutadapt -a ADAPTER_FWD -A ADAPTER_REV -o out.1.fastq -p out.2.fastq reads.1.fastq reads.2.fastq
+
+
+#############################
+###### TRIM AND FILTER ######
+#############################
+
+#trim the reads
+mkdir trimmed
+>trim1; for file in *.fastq; do echo "cutadapt -g GATCGGAAGAGC --minimum-length 15 $file > trimmed/${file/.fastq/}.trim0" >> trim1; done
+launcher_creator.py -n trim1 -j trim1 -a $allo -e $email -q normal -t 5:00:00 -N 2 -w 48
+sbatch trim1.slurm
+
+
+#now quality filter the reads
+module load fastx_toolkit
+mkdir filtered
+>filt; for file in *.trim0; do echo "fastq_quality_filter -Q33 -q 20 -p 90 -i $file -o ../filtered/${file/trim0/}trim" >> filt; done
+launcher_creator.py -j filt -n filt -t 1:00:00 -a tagmap -e $email -N 1 -w 48 -q normal
+sbatch filt.slurm
+
+#now we have the entire set of trimmed and cleaned reads
+ls *.trim | wc -l
+	#62 files
+
+#get the filtered read counts for all samples
+echo '>filteredReadCounts.tsv;for file in *.trim; do count=$(grep "^@" $file | wc -l); echo -e "$file\t$count" >> filteredReadCounts.tsv;done' > getCounts
+
+
+#look at read counts with read_counts.R
+
+###################################################
+##################### MAPPING #####################
+###################################################
+#begin with the trimmed reads
+#run in its own directory
+#Note if you want to try to call SNPs from these, use GATK_Walkthrough.txt
+
+#Get the A. digitifera reference genome from NCBI: ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera
+70779_ref_Adig_1.1_chrUn.fa
+ref_Adig_1.1_scaffolds.gff3
+
+
+#build a symbiodinium-Adigitifera reference combo by concatenating symbiont transcritomes to the reference
+clean_seq_definitions.py -i 70779_ref_Adig_1.1_chrUn.fa -delimit "|" -pos 4 -o adigitifera_ref_genome_cleaned_definitions.fa
+cat adigitifera_ref_genome_cleaned_definitions.fa SymC_denovo_contigs_Ahyac_Ofu.fasta SymD_denovo_contigs_Ahyac_Ofu.fasta > adig_zoox_combo.fa
+bowtie2-build adig_zoox_combo.fa adig_zoox_combo.fa
+
+
+#map the reads
+GENOME_REF="/work/02260/grovesd/lonestar/adig_genome/adig_zoox_combo.fa"
+>maps; for file in *.trim; do echo "bowtie2 --local -x $GENOME_REF -U $file -S $file.sam --no-unal -k 5" >> maps; done
+launcher_creator.py -n maps -j maps -q normal -t 10:00:00 -q normal -a $allo -N 2 -w 48
+sbatch maps.slurm
+
+
+
+#get alignment rates
+grep "overall alignment rate" maps.e503490 | awk '{split($1, a, "%"); print a[1]}' > adig_zoox_combo_mapping_efficiencies.txt
+
+#NOTE
+#alignment rate summaries:
+#A.millepora
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  61.93   81.15   84.84   83.61   87.98   91.78
+standard error = 0.8422528
+
+#A.digitifera
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  58.71   76.06   79.60   78.35   82.67   84.99 
+standard error = 0.7422231
+
+#FIRST CONVERT TO BAM FILES AND SORT FOR MARKING DUPLICATES
+samSort.py *.sam > convertSort
+launcher_creator.py -n convertSort -j convertSort -t 5:00:00 -a tagmap -N 1 -w 48 -q normal
+sbatch convertSort.slurm
+
+
+#NOW USE PICARD TO REMOVE DUPLICATES IN THE SORTED BAM FILES
+
+>removeDups;for file in *Sorted.bam; do echo "java -Xms4g -jar /work/02260/grovesd/lonestar/picard/picard-tools-1.119/MarkDuplicates.jar\
+ INPUT=$file\
+ OUTPUT=${file/.bam/}_dupsRemoved.bam\
+ METRICS_FILE=${file/.bam/}_dupMetrics.txt\
+ REMOVE_DUPLICATES=true" >> removeDups; done
+launcher_creator.py -n removeDups -j removeDups -t 10:00:00 -q normal -N 1 -a $allo -w 2
+sbatch removeDups.slurm
+
+
+#GATHER THE REMOVAL METRIC DATA
+>metRemovalMetrics.tsv;for file in *m.trimSorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8)
+ echo -e "$file\t$pct" >> >metRemovalMetrics.tsv; done
+ 
+>ubRemovalMetrics.tsv;for file in *ub.trimSorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8)
+ echo -e "$file\t$pct" >> ubRemovalMetrics.tsv ; done
+
+
+#CONVERT BACK
+>convertback;for file in *dupsRemoved.bam; do echo "samtools view -h -o ${file/.bam/}.sam $file" >> convertback; done
+launcher_creator.py -n convertback -j convertback -q normal -t 3:00:00 -N 1 -w 48 -a $allo
+sbatch convertback.slurm
+
+
+#original step to fix names, no longer necessary because of the clean_seq_definitions.py step above
+			#note the full names given in the genome do not match the contig names in the gff
+			#change out the sam files like so:
+			>fixNames
+			for file in *_dupsRemoved.sam; do echo "cat $file | awk '{OFS=\"\t\"; split(\$3, a, \"|\"); \$3=a[4]; print}' > ${file/.trimSorted_dupsRemoved.sam/_final.sam}" >>fixNames; done
+			launcher_creator.py -n fixNames -j fixNames -a $allo -q normal -N 1 -w 48 -t 00:30:00
+			sbatch fixNames.slurm
+
+
+
+#get promoter/gbm counts
+module load htseq
+#run htseq
+>doCounts; for file in *dupsRemoved.sam; do echo "htseq-count\
+ -f sam -t CDS -m intersection-nonempty --stranded=no -i gene $file ref_Adig_1.1_scaffolds_promoters_up1000_down200.gff3 > ${file/reduced.fastq_Sorted_dupsRemoved.sam/CDS_counts.gff}"\
+ >> doCounts; done
+
+launcher_creator.py -n doCounts -j doCounts -q normal -t 5:00:00 -a $allo -e $email -N 1 -w 48
+sbatch doCounts.slurm
+
+
+#assemble the gene counts into a single table
+assemble_htseq_counts.py -i *exon_counts.gff -o CDS_counts_11-14-16.tsv -pos 1 -delim .
+
+#clean lines
+sed -i.bak 's/_exon_counts//g' CDS_counts_11-14-16.tsv
+
+
+#get promoter locations from the gff
+pull_promoters.py -i ref_Adig_1.1_scaffolds.gff3 -o adig_promoters.gff -buffer 0
+
+#get the mapping counts for the promoters
+mkdir promoter_counts
+cd promoter_counts
+ln -s ../*final.sam .
+>promoterCounts; for file in $(ls *final.sam); do echo "htseq-count\
+ -f sam -t gene -m intersection-nonempty -i gene $file adig_promoters_buffrd300.gff > ${file/_final.sam/_promoter_counts.gff}"\
+ >> promoterCounts; done
+
+launcher_creator.py -n promoterCounts -j promoterCounts -q normal -t 5:00:00 -a $allo -e $email -N 2 -w 48
+sbatch promoterCounts.slurm
+
+
+
+#assemble the promoter counts into a single table
+assemble_htseq_counts.py -i *promoter_counts.gff -o all_promoter_counts.txt -pos 1 -delim .
+
+
+
+
+##################################################
+################# SYMBIONT TYPING ################
+##################################################
+#get the file symABCD.fasta which has the symbiont transcriptomes concatenated as single chromosomes as chr11-14
+grep "^>" symABCD.fasta
+		>chr11
+		>chr12
+		>chr13
+		>chr14
+
+#concatenate those onto the genome you want to use to soak up all the coral reads
+concatFasta.pl fasta=amil_genome_fold_c.fasta num=10
+
+
+#concat them all together
+cat amil_genome_fold_c_cc.fasta symABCD.fasta > typingRef.fasta
+
+#check that you have 14 total chromosomes
+grep "^>" typingRef.fasta
+
+
+#now map to it
+echo "bowtie2-build typingRef.fasta typingRef.fasta" >build
+launcher_creator.py -n build -j build -q normal -t 1:00:00 -a $allo
+sbatch build.slurm
+
+
+>ztypeMaps; for file in *.trim; do echo "bowtie2 --local -x typingRef.fasta -U $file -S $file.sam --no-unal -k 5" >> ztypeMaps; done
+launcher_creator.py -n ztypeMaps -j ztypeMaps -q normal -t 6:00:00 -q normal -a tagmap -N 2 -w 48
+sbatch ztypeMaps.slurm
+
+
+#now get the clade ratios
+echo "zooxType.pl > zooxRatios.tsv" > typing
+launcher_creator.py -n typing -j typing -q normal -t 5:00:00 -a $allo -e $email
+sbatch typing.slurm
+
+
+
+#############################################################################
+################## GETTING START POINT DENSITIES ACROSS CONTIGS #############
+#############################################################################
+#(data for James Scott)
+#This can be obtained directly from the sam files once duplicates are removed
+#we want to extract the good reads from each sam file
+#column 2 in the sam file has the FLAG, which gives characters of read mapping for that line
+#0 indicates a single end read that mapped in the forward direction
+#16 indicates a single end read that mapped in the reverse direction
+#gather only these reads for each file
+
+#---------------------- TESTING -----------------------
+# First make sure that this is right by pulling sequences 
+#and comparing the results with what picard thinks the duplication frequency is
+#pull good reads for dups removed file
+cat KK10_2m.trimSorted_dupsRemoved.sam |\
+awk 'BEGIN {print "contig\tposition"}
+{if ($2==0){print $3"\t"$4}}
+{if($2==16){print $3"\t"$4}}' > KK10_density.tsv
+
+#pull them for the file with duplicates still in it
+cat KK10_2m.trim.sam |awk 'BEGIN {print "contig\tposition"}
+{if ($2==0){print $3"\t"$4}}
+{if($2==16){print $3"\t"$4}}' > KK10_DUP_density.tsv
+
+cat KK10_density.tsv | wc -l
+cat KK10_DUP_density.tsv | wc -l
+#take 1 - the difference
+
+grep KK10 metRemovalMetrics.tsv
+
+#should be identical
+#-------------------------------------------------------
+
+
+> pull_densities
+for file in *m.trimSorted_dupsRemoved.sam
+do echo "cat $file | \
+awk 'BEGIN {print \"contig\tposition\"}\
+{if (\$2==0){print \$3\"\t\"\$4}}\
+{if(\$2==16){print \$3\"\t\"\$4}}'>${file/m.trimSorted_dupsRemoved.sam/}_positions.tsv" >> pull_densities
+done
+
+
+fasta_sequence_characters.py -fa adi_v1.0.scaffold.fa | grep -v "CpG count" > Adigitifera_reference_genome_contig_lengths.tsv
+
+#build a .Rdata object of the dataframes
+density_list.R
+
+
+#make readable for anyone
+chmod a=rx positions.Rdata 
+
+
+##################################################################
+################# REMAPPING GENE EXPRESSION READS ################
+##################################################################
+#The gene expression reads were stored on the SRA database
+#The data can be download as .sra files via FTP
+#Then you unpack them using the sra toolki
+#first get the sra toolkit
+wget "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
+tar -xzf sratoolkit.current-centos_linux64.tar.gz
+#path to scripts:
+/work/02260/grovesd/lonestar/sratoolkit.2.8.0-centos_linux64/bin
+
+
+#now download one sra file
+#The generic path is:
+ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6 characters of accession>/<accession>/<accession>.sra
+
+Example to download SRR1640975.sra:
+wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR164/SRR1640975/SRR1640975.sra
+
+
+#To get all the 'run' names go here and download the SraRunTable: https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP049522
+#print out wget commands form this:
+cat SraRunTable.txt | awk '{x = substr($6, 1, 6);print "wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/"x"/"$6"/"$6".sra"}'
+
+
+#now you should have 54 .sra files
+#unpack the SOLiD data using the sra toolkit
+>unpackSRA;for file in *.sra; do echo "/work/02260/grovesd/lonestar/sratoolkit.2.8.0-centos_linux64/bin/abi-dump $file" >> unpackSRA; done
+launcher_creator.py -n unpackSRA -j unpackSRA -q normal -N 1 -t 1:00:00 -a $allo -e $email
+sbatch unpackSRA.slurm
+
+
+#now we need to map them
+#download shrimp from here:
+http://compbio.cs.toronto.edu/shrimp/
+wget http://compbio.cs.toronto.edu/shrimp/releases/SHRiMP_2_2_3.lx26.x86_64.tar.gz
+
+
+# assumes the quality files have the same filename but extension 'qual'
+#attempted with wayness 12 and did not complete
+GENOME_REF="/work/02260/grovesd/lonestar/adig_genome/adigitifera_ref_genome_cleaned_definitions.fa"
+
+>do_cs_maps;for file in *.csfasta; do echo "gmapper-cs -N 3 --strata --local $file $GENOME_REF > ${file/.csfasta/.sam}">>do_cs_maps; done
+launcher_creator.py -n do_cs_maps -j do_cs_maps -q normal -N 1 -w 4 -a $allo -e $email -t 5:00:00
+sbatch do_cs_maps.slurm
+
+#rename the sam files
+rename _F3.sam .sam *_F3.sam
+rename _F5-RNA.sam .sam *_F5-RNA.sam
+
+#get the sample IDs back
+cat SraRunTable.txt | awk '{x = substr($6, 1, 6);print "wget ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/"x"/"$6"/"$6".sra"}'
+
+
+#fix the names
+>fixNames
+for file in *.sam; do echo "cat $file | awk '{OFS=\"\t\"; split(\$3, a, \"|\"); \$3=a[4]; print}' > ${file/.sam/_final.sam}" >>fixNames; done
+
+
+
+#now get counts
+
+
+module load htseq
+ln -s /work/02260/grovesd/lonestar/adig_genome/ref_Adig_1.1_scaffolds.gff3 .
+>doCounts; for file in *final.sam; do echo "htseq-count\
+ -f sam -t CDS -m intersection-nonempty --stranded=no -i gene $file ref_Adig_1.1_scaffolds.gff3 > ${file/.sam/_tagseq_counts.gff}"\
+ >> doCounts; done
+
+launcher_creator.py -n doCounts -j doCounts -q normal -t 5:00:00 -a $allo -e $email -N 1 -w 48
+sbatch doCounts.slurm
+
+
+#assemble the promoter counts into a single table
+assemble_htseq_counts.py -i *_counts.gff -o all_rnaseq_counts.txt -pos 1 -delim .
+
+#also run symbiont typing on the sam files
+
+
+
+#once you have RNAseq read counts mapped to the digitifera genome use the following scripts:
+DESeq_RNA_environment_11-4-16.R
+correlation_with_expression.R
+
+###################################################################
+############### MAP RNASEQ TO TRANSCRIPTOME #######################
+###################################################################
+#set reference as Moya transcriptome
+GENOME_REF="/work/02260/grovesd/lonestar/amillepora_transcriptome_july2014/amil.fasta"
+
+#do mapping
+>do_cs_maps;for file in *.csfasta; do echo "gmapper-cs -N 3 --strata --local $file $GENOME_REF > ${file/.csfasta/.sam}">>do_cs_maps; done
+launcher_creator.py -n do_cs_maps -j do_cs_maps -q normal -N 1 -w 4 -a $allo -e $email -t 5:00:00
+sbatch do_cs_maps.slurm
+
+
+####################################################################################
+################### LOOK AT METHYLATION DISTRIBUTION AROUDN TSSs ###################
+####################################################################################
+#goal here is to see if methylation decreases around promoters
+
+#now build bed files giving windows surounding the transcription start sites of each gene
+#find out how many genes there are
+cut -f 3 ref_Adig_1.1_scaffolds.gff3 | grep "gene" | wc -l
+
+#multiply this by number of windows to make for each gene
+#then divide by 48 so you can output 48 files for paralleling multicoving
+tss_bed_windows.py -i ref_Adig_1.1_scaffolds.gff3 -w 100 -b 3100 -c contig_sizes.tsv -m 100000
+
+
+#make sure you have the right number of bed files
+llt tss*_sub*.bed
+ls tss*_sub*.bed | wc -l
+
+
+#run multicov on this
+module load bedtools
+> threadMulticov
+for file in tss_windows_w100_b3100_sub*.bed; do echo "bedtools multicov -bams *.bam -bed $file > ${file/tss_windows_w100_b3100/multicovCounts}" >> threadMulticov; done
+launcher_creator.py -n threadMulticov -j threadMulticov -q normal -t 5:00:00 -a $allo -e $email -N 4 -w 12
+sbatch threadMulticov.slurm
+
+
+#build a header for the multicov output
+ll *.bam | awk 'BEGIN{printf "contig\tstart\tstrop\twindow\tgenBank\tlocusName\tdirection"}
+{printf "\t" $9} END{printf "\n"}' > final_thread_multicov_w100_b3100.tsv 
+
+#remove junk from sample names
+sed -i.bak 's/.trimSorted.bam//g' final_thread_multicov_w100_b3100.tsv 
+
+#assemble counts table by catting all the threaded multicov outputs back together
+for file in *multicovCounts_sub*.bed; do cat $file >> final_thread_multicov_w100_b3100.tsv; done
+
+
+#run DESeq on the windows
+echo "module load Rstats" > runTssDesq
+echo "deseq_tss_windows.R final_thread_multicov_w100_b3100.tsv" >> runTssDesq
+
+
+
+#reformat the rowname data
+cat tss_window_deseq_results.tsv | awk '{split($1, a, "_"); print a[3]}' > window_numbers.tsv
+cat tss_window_deseq_results.tsv | awk '{split($1, a, "_"); print a[1]"_"a[2]}' > loci.tsv
+
+#then build the figures in an R idev session
+dat=read.table("tss_window_deseq_results.tsv", header = T)
+wdat = read.table("window_numbers.tsv")
+ldat = read.table("loci.tsv", header = T)
+loci=ldat$baseMean_
+windows = wdat$V1
+dat$windows = windows
+dat$loci = loci
+rdat = na.omit(dat)
+mns = tapply(rdat$log2FoldChange, rdat$window, mean)
+xs=as.numeric(names(mns))
+library(plotrix)
+sterrs = tapply(rdat$log2FoldChange, rdat$window, std.error)
+stwin = sterrs/2
+bottoms = mns - stwin
+tops = mns + stwin
+stdvs = tapply(rdat$log2FoldChange, rdat$window, sd)
+mdat=data.frame(mns, bottoms, tops, xs)
+
+ploting_data = data.frame(mns, xs, sterrs, stdvs)
+
+
+
+pdf("tss_window_means.pdf")
+plot(mdat$mns~mdat$xs, xlab = 'Gene Position', ylab = 'MBD-score', main = "50bp windows upstream and downstream")
+dev.off()
+
+pdf("tss_window_mean_lines.pdf")
+plot(mdat$mns~mdat$xs, xlab = 'Gene Position', ylab = 'MBD-score', main = "50bp windows upstream and downstream", pch = 26)
+lines(mdat$mns~mdat$xs, lwd = 2)
+lines(mdat$tops~mdat$xs, col='red')
+lines(mdat$bottoms~mdat$xs, col='red')
+dev.off()
+
+
+
+load("mbd_classes.Rdata")
+load("all_annotations.Rdata")
+colnames(all.anot) = c("geneID", "gene", "locusName", "loci")
+c2=merge(classes, all.anot, by = 'gene')
+
+comp1=rdat[rdat$loci %in% c2[c2$mbd.class == 1,'loci'],]
+comp2=rdat[rdat$loci %in% c2[c2$mbd.class == 2,'loci'],]
+
+mns1 = tapply(comp1$log2FoldChange, comp1$window, mean)
+mns2 = tapply(comp2$log2FoldChange, comp2$window, mean)
+x1=as.numeric(names(mns1))
+x2=as.numeric(names(mns2))
+sterrs1 = tapply(comp1$log2FoldChange, comp1$window, std.error)
+sterrs2 = tapply(comp2$log2FoldChange, comp2$window, std.error)
+stdvs1 = tapply(comp1$log2FoldChange, comp1$window, sd)
+stdvs2 = tapply(comp2$log2FoldChange, comp2$window, sd)
+
+#write out data to plot on Mac
+out = data.frame(mns, xs, sterrs, stdvs)
+out1 = data.frame(mns1, x1, sterrs1, stdvs1)
+out2 = data.frame(mns2, x2, sterrs2, stdvs2)
+
+save(out)
+
+
+
+pdf("tss_indiv_windows.pdf")
+plot(1, 1, xlim=c(-3000, 3000), ylim=c(-5,3), type="n", xlab = 'Gene Position', ylab = 'MBD-score', main = "100bp windows upstream and downstream")
+lineNum = 0
+for (i in sample(unique(rdat$loci), size= 100)){
+	lineNum = lineNum + 1
+	if lineNum/10
+	sub = rdat[rdat$loci == i,]
+	xs = as.numeric(sub$windows)
+	mbd.scores = sub$log2FoldChange
+	lines(mbd.scores~xs, col=alpha('grey', 0.001))
+}
+lines(mdat$mns~mdat$xs, lwd = 2)
+dev.off()
+
+
+
+
+
+
+
+
+
+####################################################################
+#################### LOOK AT METHYLATION ALONG EXONS  ##############
+####################################################################
+#add numbered exon tags to the gff
+number_exons_in_gff.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_numbered_exons.gff3 
+
+#get the counts with htseq
+>doExonCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
+ -f sam -t CDS -m intersection-nonempty --stranded=no -i EXON $file ref_Adig_1.1_scaffolds_numbered_exons.gff3 > ${file/.trimSorted_dupsRemoved.sam/_exon_counts.gff}"\
+ >> doExonCounts; done
+
+launcher_creator.py -n doExonCounts -j doExonCounts -q normal -t 6:00:00 -a $allo -e $email -N 1 -w 48
+sbatch doExonCounts.slurm
+
+
+
+
+
+
+
+
+
+
+|||||||||||||||||||||||||||||||| OLD. DECIDED NOT TO USE ||||||||||||||||||||||||||||||||
+#set up a gff with introns
+delineate_introns.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_introns.gff3 
+
+#get the counts with htseq
+>doExonCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
+ -f sam -t CDS -m intersection-nonempty --stranded=no -i INTRON-EXON $file ref_Adig_1.1_scaffolds_introns.gff3 > ${file/.trimSorted_dupsRemoved.sam/_exon_counts.gff}"\
+ >> doExonCounts; done
+ 
+launcher_creator.py -n doExonCounts -j doExonCounts -q normal -t 6:00:00 -a $allo -e $email -N 1 -w 48
+sbatch doExonCounts.slurm
+
+
+
+#get the counts with htseq
+>doIntronCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
+ -f sam -t intron -m intersection-nonempty --stranded=no -i INTRON-EXON $file ref_Adig_1.1_scaffolds_introns.gff3 > ${file/.trimSorted_dupsRemoved.sam/_introns_counts.gff}"\
+ >> doIntronCounts; done
+
+launcher_creator.py -n doIntronCounts -j doIntronCounts -q normal -t 6:00:00 -a $allo -e $email -N 1 -w 48
+sbatch doIntronCounts.slurm
+
+#asssemble the counts into single file
+assemble_htseq_counts.py -i *exon_counts.gff -o numbered_exon_counts.tsv -pos 1 -delim .
+assemble_htseq_counts.py -i *introns_counts.gff -o numbered_intron_counts.tsv -pos 1 -delim .
+
+
+
+#fix sample names
+sed -i.bak 's/_exon_counts//g' numbered_exon_counts.tsv
+sed -i.bak 's/_introns_counts//g' numbered_intron_counts.tsv
+
+
+#REFORMAT THE OUTPUT SO IT DOESN'T NEED TO BE DONE IN R
+#concatenate the data
+grep "XP_" numbered_intron_counts.tsv | awk 'BEGIN { OFS = "\t"}{x=$1"-intron";$1=x; print'} > introns.tsv
+grep "XP_" numbered_exon_counts.tsv | awk 'BEGIN { OFS = "\t"}{x=$1"-exon";$1=x; print'} > exons.tsv
+cat introns.tsv exons.tsv > all.tsv
+#pull out the row name data for separate input
+cat all.tsv | awk '{split($1, a, "-"); split(a[2], b, "num"); print a[1]"\t"b[2]"\t"a[3]}' > row_features.tsv
+#assemble final input file
+grep "KK10_2m" numbered_intron_counts.tsv > all_intron_exon_counts.tsv
+cat all.tsv >> all_intron_exon_counts.tsv 
+
+#now upload into R
+
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+
+
+
+############################################################################
+#################### GET GBM AND PROMOTER COUNTS AT SAME TIME ##############
+############################################################################
+#set up a gff that has promoters and ambigous areas labeled to account for tss methylation
+delineate_tss_gbm.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_promoters_up500_down500.gff3 -pUp 1000 -pDown 200 -a 0 -c contig_sizes.tsv 
+
+#or to do it based on entire gene (This did not work as well, recommend using version 1 as above).
+delineate_tss_gbmV2.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_promoters_gbm.gff3 -pUp 900 -pDown 100 -c contig_sizes.tsv
+
+
+#now get counts
+>gbmPromoterCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
+ -f sam -t CDS -m intersection-nonempty --stranded=no -i PROMOTER_GBM $file ref_Adig_1.1_scaffolds_promoters_up1000_down200.gff3 > ${file/.trimSorted_dupsRemoved.sam/_CDS_counts.gff}"\
+ >> gbmPromoterCounts; done
+launcher_creator.py -n gbmPromoterCounts -j gbmPromoterCounts -q normal -t 6:00:00 -N 1 -w 48 -a $allo -e $email
+sbatch gbmPromoterCounts.slurm
+
+#asssemble the counts into single file
+assemble_htseq_counts.py -i *_counts.gff -o promoter_gbm_counts_p-1000_200.tsv -pos 1 -delim .
+
+#fix sample names
+sed -i.bak 's/_CDS_counts//g' promoter_gbm_counts_p-1000_200.tsv
+
+#get a dataframe with feature types
+cat promoter_gbm_counts_p250_both.tsv | awk '{split($1, a, "-"); print a[1]}'>featureTypes_p900-100.tsv
+
+
+#built two files:
+promoter_gbm_counts_p900-100.tsv -- this one has the promoter assigned at 1000 bp starting at position +100 inside of gene
+
+
+#################################################################################
+############## LOOKING AT METHYLATION ACROSS WINDOWS USING BEDTOOLS #############
+#################################################################################
+#first we need a table of chromosome lengths from out genome
+fasta_sequence_characters.py -fa /work/02260/grovesd/genome/amil_genome_fold_c.fasta > contig_sizes.tsv
+
+#now use bedtools makewindows to build a windows file
+#this will be a three column table with the three required bed file features:
+#chrom, chromStart, chromEnd
+nano makeWindow
+bedtools makewindows -g contig_sizes.tsv -w 500 > 500bp_windows.bed
+bedtools makewindows -g contig_sizes.tsv -w 1000 > 1kb_windows.bed
+bedtools makewindows -g contig_sizes.tsv -w 5000 > 5kb_windows.bed
+bedtools makewindows -g contig_sizes.tsv -w 10000 > 10kb_windows.bed
+bedtools makewindows -g contig_sizes.tsv -w 100000 > 100kb_windows.bed
+
+launcher_creator.py -n makeWindow -j makeWindow -t 3:00:00 -q normal -a tagmap -e grovesdixon@gmail.com
+sbatch makeWindow.slurm
+
+
+#then you can get the fold coverage on each window
+>multicov;for file in $(ls *windows.bed); do echo "bedtools multicov -bed $file -bams *.bam > ${file/windows.bed/}counts.bed" >> multicov; done
+launcher_creator.py -n multicov -j multicov -q normal -t 10:00:00 -a tagmap -e grovesdixon@gmail.com
+sbatch multicov.slurm
+
+
+#this will output counts files without headers and with the first three fields as the contig, the start, and the end of the window
+
+#first concatenate the first three fields into a single one
+for file in $(ls *counts.bed); do cat $file | awk 'BEGIN {OFS = "\t"}{$3 =$1 "_" $2 "_" $3; $1 = ""; $2 = ""; print $0}' | cut -f1,2 --complement > ${file/counts.bed/counts2.bed}; done
+
+#create a header
+ls *bam | awk 'BEGIN {x="chr_strt_end"}{gsub(/.trim.bam/, "", $0); x = x "\t" $0;} END {print x}' > header
+
+#concatenate the headers with counts files
+for file in $(ls *counts2.bed); do cat header $file > ${file/2.bed/.tsv}; done
+
+#now you have read files ready for input into DESeq
+
+
+
+
+
+
+
+
+
+

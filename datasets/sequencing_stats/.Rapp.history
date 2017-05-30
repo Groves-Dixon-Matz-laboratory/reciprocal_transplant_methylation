@@ -1,0 +1,56 @@
+#read_counts.R#
+setwd("/Users/grovesdixon/lab_files/projects/recip_meth/sequencing_stats")#
+#------- look at read counts ----------#
+rawcounts = read.table("rawReadCounts.tsv")#
+colnames(rawcounts) = c('file', 'rawcount')#
+filtcounts = read.table("filteredReadCounts.tsv")#
+colnames(filtcounts) = c('file', 'filtcount')#
+dat = merge(rawcounts, filtcounts, by = 'file')#
+nrow(dat)#
+#plot histograms for all counts#
+par(mfrow=c(2,1))#
+hist(dat$rawcount,#
+	main='Raw Read Counts',#
+	xlab = 'Read Counts')#
+hist(dat$filtcount,#
+	main='Filtered Read Counts',#
+	xlab = 'Read Counts')#
+#
+library(plotrix)#
+summary(dat$rawcount)#
+sum(dat$rawcount)#
+sd(dat$rawcount)#
+std.error(dat$rawcount)#
+summary(dat$filtcount)#
+sum(dat$filtcount)#
+std.error(dat$filtcount)#
+#
+plot(filtcount~rawcount, data = dat)#
+#------- mapping efficiencies ----------#
+mapeff = read.table("mapping_efficiencies_coding.tsv")#
+colnames(mapeff) = c('eff')#
+hist(mapeff$eff)
+dig = read.table("adig_zoox_combo_mapping_efficiencies.txt")#
+mil = read.table("amil_zoox_combo_mapping_efficiencies.txt")
+library(plotrix)
+summary(dig)
+summary(mil)
+std.error(dig$V1)
+std.error(mil$V1)
+mil
+std.error(mil$V1)
+83.61-78.35
+std.error(dig$V1)
+sd(mil$V1)
+dups = rbind(mdups, udups)
+mdups = read.table("Adig_zoox_combo_metRemovalMetrics.tsv")#
+udups=read.table("Adig_zoox_combo_ubRemovalMetrics.tsv")#
+dups = rbind(mdups, udups)
+dim(dups)
+colnames(mdups) = c('sample', 'dup')
+summary(dups)#
+std.error(dups$dup)
+dups
+colnames(dups) = c('sample', 'dup')
+summary(dups)#
+std.error(dups$dup)

@@ -1,0 +1,116 @@
+#This Walkthrough Contains instructions for running WGCNA on MBDseq data
+#Groves Dixon
+
+
+#Get Variance Stabilized Counts
+#We will use these to identify outliers,
+#perform multivariate analyses, and for input into WGCNA
+#use this script:
+wgcna1_initialize.R
+
+
+#these scripts outputs:
+wgcna-01_output.RData
+
+#Scp this to lonestar to run computationally difficult steps
+#For instructions on setting up WGCNA on TACC see Appendix at bottom
+
+
+
+#WGCNA Step 1: import, clean and gather summary data
+#This was done with get_variance_stabilized_counts.R above
+
+
+#step 2: get soft threshold
+
+#scp the wgcna-01_output*.RData files to TACC
+#run the next two steps on each of these
+#It's easiest to run these in an idev session
+idev
+module load Rstats
+wgcna2_get_soft_threshold.R wgcna-01_output_fullDataset.RData signed
+
+
+
+#step 4_a: manual module construction 
+wgcna3b_step-wise_network_construction.R 20 20 0 wgcna-01_output_fullDataset.RData signed
+
+		#arguments for step 4_a:
+			1st = the soft threshold
+			2nd = minimum module size
+			3rd = merging threshold   
+			4th = input
+			5th = signed/unsigned network
+
+#outputs:
+	Clustering_module_eigengenes.pdf -- This is the clustering of the module eigengens, indicating how similar they are. Use this for merging modules that are similar
+	Plots_geneDendro-3.pdf           -- The gene cluster dendrogram with module color assignments plotted below
+	wgcna3b_manual_networkConstruction_output.RData -- The module data as an R data object. Upload this into wgcna4_correlation.R
+
+
+#step 4_b: module merging
+#here you can repeat the previous step, but use a non zero value for the mergin threshold
+#look at the difference it makes in the figure Plots_geneDendro-3.pdf 
+wgcna3b_step-wise_network_construction.R 18 10 0 wgcna-01_output.RData
+
+#step 4: send back to mac and run wgcna4_correlations.R to look at correlations
+
+#outputs:
+	in Code Chunk 6 you can output the genes for a particular module of interest
+	paste these here to test for GO enrichment: http://geneontology.org/page/go-enrichment-analysis
+
+
+
+
+
+########## APPENDIX1: SETTING UP WGCNA ON TACC ##########
+#Setting up TACC to run wgcna (only needs to be done once)
+module load Rstats
+R
+
+#in the R environment:
+install.packages(c("matrixStats", "Hmisc", "splines", "foreach", "doParallel", "fastcluster", "dynamicTreeCut", "survival"))
+
+#note the http mirror wouldn't work for me, just chose a different one
+source("http://bioconductor.org/biocLite.R") 
+biocLite(c("GO.db", "preprocessCore", "impute"))
+install.packages("WGCNA")
+
+#(these may take a bit)
+
+########## APPENDIX2: NORMALIZING READ COUNTS ##########
+#In the wgcna data I noticed that read count was a strong predictive factor
+#To see if this really matters reduce all files to the same read count
+
+#first get read counts
+for file in *.trim; do count=$(grep "^+" $file | wc -l); echo -e "$file\t$count"; done
+
+#choose lower end read count of 10422100 (41688400 lines of fastq)
+>reduce;for file in *m.trim; do echo "head -n 41688400 $file > ${file/.trim/_reduced.fastq}">>reduce ; done
+launcher_creator.py -n reduce -j reduce -q development -a tagmap -N 1 -w 48 -t 00:20:00
+sbatch reduce.slurm 
+
+#re-check read counts
+for file in *reduced.fastq; do count=$(grep "^+" $file | wc -l); echo -e "$file\t$count"; done
+
+#now take back through mapping as in MBD-seq_Data_Processing_Walkthough.txt
+
+##############################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

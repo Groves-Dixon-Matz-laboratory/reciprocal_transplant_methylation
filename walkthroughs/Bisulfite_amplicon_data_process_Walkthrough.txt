@@ -1,0 +1,275 @@
+#Bisulfite_amplicon_sequencing Walkthrough
+#Instructions for targeted sequencing of bisulfite converted DNA (Abey and Shendure 2012; Masser et al. 2013, Masser et al. 2015)
+#Groves Dixon
+#12/8/16
+
+
+
+#### SELECT TARGET GENES OF INTEREST ####
+#Want genes that show large variation in methylation by MBD-seq data
+#Want genes that are interesting
+#differentially methylated genes flagged by DESeq
+#top Kmes for modules of interest
+#mixture of genes from strongly and weakly methylated classes
+
+#for list of genes see excel file bisulfite_seq_metadata.excel
+
+
+
+############ DESIGN PRIMERS ############
+#grab the lines from the gff that match with the mRNA of interest
+#then reduce down to only exons
+#then export the slices of the genome 
+
+
+
+prot='XP_015747516.1'
+grep $prot ref_Adig_1.1_scaffolds.gff3 > ${prot}_slice.tsv
+cut -f 1,4,5 ${prot}_slice.tsv > ${prot}_slice_table.tsv
+slice_fasta.py adig_zoox_combo.fa ${prot}_slice_table.tsv
+
+
+
+#choose a slice of sequence and plug into zymo bisulfite primer seeker tool: http://www.zymoresearch.com/tools/bisulfite-primer-seeker?message=ok
+#blastx the selected sequence to ensure it's what it's annotated as
+#record in primers section of gene_to_bisulfite.excel
+
+#a final fasta file of the selected slices there were put into zymo is saved as:
+
+
+#---------------------------------------------------------------------------------------------------------------
+
+#Bisulfite Amplicon Sequencing Data Processing
+
+############# DOWNLOAD FROM GSAF #############
+gsaf_download.sh "http://gsaf.s3.amazonaws.com/JA17132.SA17045.html?AWSAccessKeyId=AKIAIVYXWYWNPBNEDIAQ&Expires=1490381478&Signature=Al4IhciihH3r5hs%2BdBHzjGDi71o%3D"
+
+#organize into subdirectories for Marie's reads and mine
+
+#back up the reads on corral
+tar -zcvf JA17132_SA17045_read_downloads.tgz JA17132_SA17045_read_downloads/
+scp JA17132_SA17045_read_downloads.tgz grovesd@corral.tacc.utexas.edu:/corral-repl/utexas/tagmap/dixon_backups/reciprocal_methylation/bisulfite_amplicon_seq
+
+############# RUN FASTQC #############
+module load fastqc
+mkdir Fastqc_Restults
+echo fastqc -o Fastqc_Restults/ -f fastq *.fastq > runFQC
+launcher_creator.py -n runFQC -j runFQC -l runFQC.job -a tagmap -t 1:00:00 -N 1 -w 48 -q development
+sbatch runFQC.job
+
+
+############# QUALITY TRIM WITH CUTADAPT #############
+#tried quality trimming the reverse reads (R2 files), but the last 75 bases are crap no matter what, so first remove those
+>r2_trim; for file in *R2_001.fastq; do echo "cutadapt -u -75 -o ${file/_001.fastq/_hardTrimmed.fastq} $file" >> r2_trim; done
+launcher_creator.py -n r2_trim -j r2_trim -q normal -t 00:30:00 -N 1 -w 48 -a tagmap
+sbatch r2_trim.slurm
+
+
+
+#now quality trim all of them 
+
+
+#!!!!NOTE DID THIS WRONG! SHOULD HAVE QUALITY TRIMMED AS PAIRED-ENDS IN CASE SOME ARE REMOVED!
+#GOT LUCKY THAT NO READS WERE FILTERED OUT SO THE PAIRED END FILES STAID CONSISTENT.
+>qtrim; for file in *R1_001.fastq; do echo "cutadapt -q 35 -o ${file/_001.fastq/_trimmed.fastq} $file" >> qtrim;done
+for file in *R2_hardTrimmed.fastq; do echo "cutadapt -q 35 -o ${file/_hardTrimmed.fastq/_trimmed.fastq} $file" >> qtrim;done
+launcher_creator.py -n qtrim -j qtrim -q normal -N 1 -w 48 -t 0:30:00 -a tagmap
+sbatch qtrim.slurm 
+
+
+#check you have all your files
+ls *_trimmed.fastq | wc -l
+#80
+
+#then repeat Fastqc
+
+############# MAP WITH BOWTIE #############
+#set up your reference as a fasta of your amplicons
+#index your referece. eg: bowtie2-build BS_converted_reference_sequences.fasta BS_converted_reference_sequences.fasta
+
+#for mapping paired end style
+>mapPE;for file in *R1_001.fastq; do echo "bowtie2 --local --mp 4 -N 1 -x ./BS_converted_reference_sequences.fasta -1 $file -2 ${file/_R1_/_R2_} -S ${file/L001_R1_001.fastq/PE.sam}" >> mapPE; done
+launcher_creator.py -n mapPE -j mapPE -q development -t 00:30:00 -N 1 -w 48 -a tagmap
+sbatch mapPE.slurm
+
+
+#try mapping concatted files for each sample
+>mapCatted;for file in *.fq; do echo "bowtie2 --local --mp 4 -N 1 -x ./BS_converted_reference_sequences.fasta -U $file -S ${file/_cat.fq/_CAT.sam}" >> mapCatted; done
+launcher_creator.py -n mapCatted -j mapCatted -q normal -t 00:30:00 -N 1 -w 48 -a tagmap
+sbatch mapCatted.slurm
+
+
+
+#convert to bam
+samSort.py *.sam > convertSort
+launcher_creator.py -n convertSort -j convertSort -q normal -t 1:00:00 -a tagmap -N 1 -w 48
+sbatch convertSort.slurm
+
+#index the reference
+samtools faidx BS_converted_reference_sequences.fasta
+
+#run mpileup
+ls *PE_Sorted.bam > bams
+echo "samtools mpileup -uv -f BS_converted_reference_sequences.fasta -b bams -A -t AD,INFO/AD,ADF,INFO/ADF,ADR,INFO/ADR > pe_results.vcf" > pileup
+launcher_creator.py -n pileup -j pileup -q normal -t 5:00:00 -a tagmap
+sbatch pileup.slurm
+
+
+
+############# ANALYZE WITH BISMARK #############
+export PATH="$PATH:/work/02260/grovesd/lonestar/bismark_installation/Bismark-master"
+
+#set up amplicon targets as reference "genome"
+mkdir ref_directory
+#move fasta file of the unconverted target amplicon regions to this directory
+bismark_genome_preparation --path_to_bowtie /opt/apps/bowtie/2.2.6/ --verbose ./adigitifera_genome/
+
+
+#optionally concatenate paired end reads into single files
+#for file in *_R1_*.fastq; do echo "cat $file ${file/_R1_/_R2_} > ${file/R1_trimmed.fastq/cat.fq}";done
+
+
+#RUN BISMARK ALIGNMENT
+#example command
+bismark [options] --genome <genome_folder> {-1 <mates1> -2 <mates2> | <singles>}
+
+
+#set up commands for catted
+>runBismarkCAT;for file in *.fq; do echo "bismark -N 1 -L 10 --score_min L,-0.6,-0.6 --path_to_bowtie /opt/apps/bowtie/2.2.6/ --genome ./ref_directory/ $file">>runBismarkCAT; done
+launcher_creator.py -n runBismarkCAT -j runBismarkCAT -q development -t 00:30:00 -a tagmap -N 1 -w 48
+sbatch runBismarkCAT.slurm
+
+#set up commands for PE
+>runBismarkPE;for file in *R1_trimmed.fastq; do echo "bismark -N 1 -L 10 --score_min L,-0.6,-0.6 --path_to_bowtie /opt/apps/bowtie/2.2.6/ --genome ./ref_directory/ -1 $file -2 ${file/_R1_/_R2_}">>runBismarkPE; done
+launcher_creator.py -n runBismarkPE -j runBismarkPE -q normal -t 2:30:00 -a tagmap -N 1 -w 48
+sbatch runBismarkPE.slurm
+
+
+
+#get the mapping efficiencies
+#for concatted
+> catted_map_efficiencies.log;for file in *cat_bismark_bt2_SE_report.txt; do eff=$(grep "Mapping efficiency:" $file); echo -e $file"\t"$eff >> catted_map_efficiencies.log;done
+#for PE
+> paired-end_map_efficiencies.log;for file in *PE_report.txt; do eff=$(grep "Mapping efficiency:" $file); echo -e $file"\t"$eff >> paired-end_map_efficiencies.log;done
+
+
+
+#extract the methylation data
+>methExtract;for file in *.bam; do echo "bismark_methylation_extractor -s $file" >>methExtract;done
+launcher_creator.py -n methExtract -j methExtract -q development -t 00:30:00 -N 1 -w 48 -a tagmap
+sbatch methExtract.slurm
+
+
+#get the methylation results
+>getMethRes;for file in CpG_OT*pe.txt; do out=$(echo $file | awk '{split($1, a, "_"); print a[3]}'); echo "bismark2bedGraph -o ${out}_PE_meth_res.tsv $file ${file/_OT_/_CTOT_}" >>getMethRes; done
+for file in CpG_OT*pe.txt; do out=$(echo $file | awk '{split($1, a, "_"); print a[3]}'); echo "bismark2bedGraph -o ${out}_CAT_meth_res.tsv $file ${file/_OT_/_CTOT_}" >>getMethRes; done
+launcher_creator.py -n getMethRes -j getMethRes -q development -t 00:30:00 -a tagmap -N 1 -w 48
+sbatch getMethRes.slurm 
+
+ls *meth_res.tsv.gz | wc -l
+
+#unzip them
+echo "gunzip bs*.gz" > unzip
+launcher_creator.py -n unzip -j unzip -t 00:10:00 -q development -a tagmap
+sbatch unzip.slurm
+
+
+#now reformat the cov files so each row has a column with the qstat
+for file in *.cov; do cat $file | awk -v fileName="$file" 'BEGIN{split(fileName, N, "_")}{print N[1]"\t"$1"_"$2"_"$3"\t"$1"\t"$2"\t"$4"\t"$5"\t"$6}' > ${file/_meth_res.tsv.gz.bismark.cov/_meth_out.tsv}; done
+
+#check you have all the files
+ls *out.tsv | wc -l
+
+#now cat them all together
+#for concatted files:
+echo -e "file\tcpgSite\tlocus\tposition\tmethPct\tmethReads\tUnmethReads" > all_CAT_bismark_results.tsv
+cat *CAT*meth_out.tsv >> all_CAT_bismark_results.tsv
+
+#for PE files:
+echo -e "file\tcpgSite\tlocus\tposition\tmethPct\tmethReads\tUnmethReads" > all_PE_bismark_results.tsv
+cat *PE*meth_out.tsv >> all_PE_bismark_results.tsv
+
+
+
+
+#Analyze the *bismark_results.tsv files with bisulfite1_initialize.R
+
+
+
+
+
+########### RE-COUNTING MBD FOLD COVERAGE FOR ONLY THE AMPLIFIED REGIONS ##########
+
+!ENDED UP DECIDING THIS WAS UNNECESSARY
+
+#The correlation between the MBD-seq results for each gene and the bisulfite results is marginal
+#This might be because the mbd-seq concerns the entire gene whereas the bisulfite just a small region.
+#Here the MBD-seq analysis is repeated from the read counting step (HTSeq), with a modified gff so that
+#each of the bisulfite genes has the boundaries of the amplicon.
+
+
+
+#get locations of the amplicons by reblasting them to the genome
+makeblastdb -in adig_zoox_combo.fa -dbtype nucl
+blastn -query Nonconverted_reference_sequences.fasta -db adig_zoox_combo.fa -outfmt 6 -num_alignments 1 > amplicon_blast_results.tsv
+grep '100.00' amplicon_blast_results.tsv > finalCoords.tsv
+cat finalCoords.tsv | wc -l
+#now we have the coordinates for the amplicons
+
+#use the coordinates to edit the gff
+
+
+##
+
+
+
+
+
+
+
+
+
+
+#EDIT THE GFF
+#here are the loci:
+LOC107327073
+LOC107356898
+LOC107358158
+LOC107356899
+LOC107358871
+LOC107334334
+LOC107347512
+LOC107350794
+LOC107339795
+LOC107336909
+LOC107352877
+LOC107351808
+LOC107327285
+
+#paste these into loci.txt
+#use ProteinTable10529_263537.txt to get the protein names
+>locus_protein.tsv; while read p; do grep $p ProteinTable10529_263537.txt >> locus_protein.tsv; done <loci.txt
+#reduce down to the unique loci (remove extra isoform protein annotations)
+awk '!array[$7]++' locus_protein.tsv | awk '{print $7"\t"$8}' > lp_table.tsv
+cat lp_table.tsv | wc -l
+
+#make separate files for them
+cut -f 1 lp_table.tsv > loc.txt
+cut -f 2 lp_table.tsv > prot.txt
+
+
+#doing this stuff here:
+/scratch/02260/grovesd/recip_meth/map_to_dig_combo/bisulfite_primer_design/get_amplicon_bounds
+
+#get fastas of the slices for each of the proteins
+>selected_seqs.fasta
+while read $prot; do
+grep $prot ref_Adig_1.1_scaffolds.gff3 > ${prot}_slice.tsv
+cut -f 1,4,5 ${prot}_slice.tsv > ${prot}_slice_table.tsv
+slice_fasta.py adig_zoox_combo.fa ${prot}_slice_table.tsv >>selected_seqs.fasta
+done < prot.txt
+
+
+
+
+

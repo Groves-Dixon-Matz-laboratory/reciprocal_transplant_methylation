@@ -1,0 +1,1345 @@
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]
+cal
+cal=cal[4:nrow(cal),]
+cal
+cal$conc=log(c(100,100/3,100/3^2,100/3^3),10)
+str(cal)
+cal
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)
+abline(ll,col="red")
+low.keep = 3
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[low.keep:nrow(cal)]#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]#
+cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)
+low.keep
+log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[low.keep:nrow(cal)]
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[nrow(cal)-low.keep:nrow(cal)]
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[nrow(cal)-low.keep:nrow(cal), ]
+cal
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]#
+cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[nrow(cal)-low.keep:nrow(cal), ]
+cal
+nrow(cal)-low.keep
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3
+nrow(cal)-low.keep
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[nrow(cal)-low.keep+1:nrow(cal), ]
+cal
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+nrow(cal)-low.keep+1:nrow(cal)
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]
+nrow(cal)-low.keep+1:nrow(cal)
+nrow(cal)-low.keep+1
+(nrow(cal)-low.keep+1):nrow(cal)
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]
+cal
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[1:low.keep]
+cal
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+cal
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), ylim=c(0,100))
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))
+log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)*50,10)[5:7]
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+cal
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]*50#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc*50~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+conc
+cal
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), ylim=c(-1,.9))
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), ylim=c(-1,.1))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))
+cal
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), ylim=c(-1,.1), xlim=c(2,3.3))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+sam
+head(sam)
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)))
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex-2)
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+axis(1,at=seq(from=min(sam$fluo), to=max(cal$fluo, length.out=6)),labels=round(10^(cal$fluo),0))
+xat=seq(from=min(sam$fluo), to=max(cal$fluo, length.out=6)
+)
+xat=seq(from=min(sam$fluo), to=max(cal$fluo, length.out=6))
+axis(1,at=xat,labels=round(10^(xat),0))
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo, length.out=6))#
+axis(1,at=xat,labels=round(10^(xat),0))
+cal
+xat
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6))
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)
+xat
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,labels=signif(yat)*50,2))
+axis(2,at= yat,labels=signif(yat*50,2))
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)
+yat
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,labels=signif(yat*50,2))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)
+yat
+axis(1,at=xat,labels=round(10^(xat),0))
+round(10^yat,3)*50
+axis(2,at= yat,round(10^yat,3)*50)
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[-grep("[ABCDEFGH]12$",sam$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[-grep("[ABCDEFGH]12$",sam$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[5:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+# ll=lm(conc~fluo,cal)#
+# abline(ll,col="red")#
+# axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+# axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[-grep("[ABCDEFGH]12$",sam$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))
+sam
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]
+sam
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[7-low.keep-1:7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+# ll=lm(conc~fluo,cal)#
+# abline(ll,col="red")#
+# axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+# axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep-1):7]#
+cal
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 4#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep-1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)
+cal
+# ll=lm(conc~fluo,cal)#
+# abline(ll,col="red")#
+# axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+# axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)
+cal
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep-1):7]
+log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep-1):7]
+[(7-low.keep-1):7]
+(7-low.keep-1):7
+7-low.keep
+(7-low.keep+1):7
+low.keep = 3
+(7-low.keep+1):7
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep+1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 4#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep+1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+# ll=lm(conc~fluo,cal)#
+# abline(ll,col="red")#
+# axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+# axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+#build plot#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 2#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep+1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+#
+# ll=lm(conc~fluo,cal)#
+# abline(ll,col="red")#
+# axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+# axis(2,at=cal$conc,labels=signif(10^(cal$conc)*50,2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 2#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep+1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+ll=lm(conc~fluo,cal)#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 4#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep+1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+ll=lm(conc~fluo,cal)#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+# the output is printed out and saved under filename like input with prefix "res_"#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen.csv"#
+#
+pg=read.csv(inFile,header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+low.keep = 3#
+cal=cal[(nrow(cal)-low.keep+1):nrow(cal), ]#
+cal#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)[(7-low.keep+1):7]#
+cal#
+# cal$conc=c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6)#
+str(cal)#
+ll=lm(conc~fluo,cal)#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0), xlim=c(min(sam$fluo),max(cal$fluo)), ylim=c(min(sam$conc),max(cal$conc)), cex=2)#
+abline(ll,col="red")#
+xat=seq(from=min(sam$fluo), to=max(cal$fluo), length.out=6)#
+yat=seq(from=min(sam$conc), to=max(cal$conc), length.out=6)#
+axis(1,at=xat,labels=round(10^(xat),0))#
+axis(2,at= yat,round(10^yat,3)*50)#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+sam$conc=round(10^sam$conc,3)*50#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+rm(list=ls())
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen_correct.txt"#
+pg=read.csv(inFile, header=T)#
+names(pg)=c("well","fluo")
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")
+inFile="bs_amplicon_library_picogreen_correct.txt"
+pg=read.csv(inFile, header=T)
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen_correct.csv"#
+pg=read.csv(inFile, header=T)#
+names(pg)=c("well","fluo")
+head(pg)
+#assign the standard wells (B1-H1)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)#
+str(cal)#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)#
+sam$fluo=NULL#
+names(sam)[2]="ng/ul"#
+sam
+write.csv(sam,file=paste("res_",inFile,sep=""),quote=F,row.names=F)
+sam
+hist(sam$[,2])
+hist(sam[,2])
+hist(sam[,2], xlab='ng/ul')
+pg
+sam
+pg
+sam.pg = sam=pg[-grep("[ABCDEFGH]1$"),]
+sam.pg = spg[-grep("[ABCDEFGH]1$",pg$fluo),]
+sam.pg = pg[-grep("[ABCDEFGH]1$",pg$fluo),]
+sam.pg
+sam.pg = pg[-grep("[ABCDEFGH]1$",pg$well),]
+sam.pg
+pg.bad = load("./100ug_ml_standard_mistake/bs_amplicon_library_picogreen_mistake.csv")
+#upload other fluoresences#
+pg.bad = read.csv("./100ug_ml_standard_mistake/bs_amplicon_library_picogreen_mistake.csv", header = T)#
+names(pg.bad)=c("well","fluo")#
+head(pg.bad)
+sam.pg.bad = pg.bad[-grep("[ABCDEFGH]1$", pg.bad$well),]
+sam.pg.bad
+sam.pg$well == sam.pg.bad$well
+pg.bad[,2]=pg.bad[,2]-pg.bad[pg.bad$well=="A1",2]
+pg.bad = pg.bad[pg.bad$well!="A1",]
+pg.bad = pg.bad[pg.bad$fluo>0,]
+pg.bad$fluo=log(pg.bad$fluo,10)
+sam.pg.bad = pg.bad[-grep("[ABCDEFGH]1$", pg.bad$well),]
+sam.pg$well == sam.pg.bad$well
+sam.pg
+sam.pg.bad
+m.pg = merge(sam.pg, sam.pg.bad, by = 'well')
+nrow(m.pg)
+m.pg
+plot(m.pg$fluo.x~m.pg$fluo.y)
+lm1 = lm(m.pg$fluo.x~m.pg$fluo.y)
+abline(lm1, col='red')
+summary(lm1)
+plot(m.pg$fluo.x~m.pg$fluo.y, pch=19, col=m.pg$well)
+m.pg
+plot(m.pg$fluo.x~m.pg$fluo.y, pch=1)
+setwd("~/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files/100ug_ml_standard_mistake")
+setwd("~/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files/100ug_ml_standard_mistake")
+inFile="bs_amplicon_library_picogreen_mistake_standard_replaced.csv"
+pg=read.csv(inFile, header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+#
+#assign the standard wells (B1-H1)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)#
+str(cal)
+#plot the standard curve#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))
+#calculate sample concentrations from the curve#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)#
+sam$fluo=NULL
+#output#
+names(sam)[2]="ng/ul"#
+sam#
+write.csv(sam,file=paste("res_",inFile,sep=""),quote=F,row.names=F)
+?substr
+sam$row = substr(sam$well, start=1, stop=1)
+sam
+sam$col = substr(sam$well, start=2, stop=6)
+sam
+write.csv(sam,file=paste("res_",inFile,sep=""),quote=F,row.names=F)
+#upload the picogreen fluorescence results#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen_correct.csv"#
+pg=read.csv(inFile, header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+#
+#assign the standard wells (B1-H1)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)#
+str(cal)#
+#plot the standard curve#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))#
+#calculate sample concentrations from the curve#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)#
+sam$fluo=NULL#
+hist(sam[,2], xlab='ng/ul')
+#output#
+names(sam)[2]="ng/ul"#
+sam#
+sam$row = substr(sam$well, start=1, stop=1)#
+sam$col = substr(sam$well, start=2, stop=6)#
+write.csv(sam,file=paste("res_",inFile,sep=""),quote=F,row.names=F)
+#test correlation with previous messup run#
+sam.pg = pg[-grep("[ABCDEFGH]1$",pg$well),]#
+#
+#upload other fluoresences#
+pg.bad = read.csv("./100ug_ml_standard_mistake/bs_amplicon_library_picogreen_mistake.csv", header = T)#
+names(pg.bad)=c("well","fluo")#
+head(pg.bad)#
+#assign the standard wells (B1-H1)#
+pg.bad[,2]=pg.bad[,2]-pg.bad[pg.bad$well=="A1",2]#
+pg.bad = pg.bad[pg.bad$well!="A1",]#
+pg.bad = pg.bad[pg.bad$fluo>0,]#
+pg.bad$fluo=log(pg.bad$fluo,10)#
+sam.pg.bad = pg.bad[-grep("[ABCDEFGH]1$", pg.bad$well),]#
+m.pg = merge(sam.pg, sam.pg.bad, by = 'well')#
+nrow(m.pg)#
+plot(m.pg$fluo.x~m.pg$fluo.y, pch=1)#
+lm1 = lm(m.pg$fluo.x~m.pg$fluo.y)#
+summary(lm1)#
+abline(lm1, col='red')
+resb = read.csv('./100ug_ml_standard_mistake/res_bs_amplicon_library_picogreen_mistake_standard_replaced.csv')
+head(resb)
+m.res = merge(sam, resb, by = 'well')
+nrow(m.res)
+plot(m.res$ng.ul.x~m.res$ng.ul.y)
+head(m.res)
+head(sam)
+#calculate sample concentrations from the curve#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")#
+sam$conc=round(10^sam$conc,1)#
+sam$fluo=NULL#
+hist(sam[,2], xlab='ng/ul')#
+#
+#output#
+names(sam)[2]="ng.ul"#
+sam#
+sam$row = substr(sam$well, start=1, stop=1)#
+sam$col = substr(sam$well, start=2, stop=6)
+write.csv(sam,file=paste("res_",inFile,sep=""),quote=F,row.names=F)
+#check that concentrations match#
+resb = read.csv('./100ug_ml_standard_mistake/res_bs_amplicon_library_picogreen_mistake_standard_replaced.csv')#
+head(resb)#
+m.res = merge(sam, resb, by = 'well')#
+head(m.res)#
+nrow(m.res)
+plot(m.res$ng.ul.x~m.res$ng.ul.y)
+lm2=lm(m.res$ng.ul.x~m.res$ng.ul.y)
+summary(lm2)
+abline(lm2, col='red')
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")
+x = read.csv('final_pico_green_results.csv')
+head(x)
+plot(x$ng.ul_nanodrop~x$ng.ul)
+plot(x$ng.ul_nanodrop~x$ng.ul, xlab = 'ng/ul picogreen', ylab = 'ng/ul nanodrop')
+lm1=lm(x$ng.ul_nanodrop~x$ng.ul)
+summary(lm1)
+abline(lm1)
+abline(lm1, col='red')
+#nanodrop_vs_picogreen.R#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+x = read.csv('final_pico_green_results.csv')#
+head(x)#
+plot(x$ng.ul_nanodrop~x$ng.ul, xlab = 'ng/ul picogreen', ylab = 'ng/ul nanodrop')#
+lm1=lm(x$ng.ul_nanodrop~x$ng.ul)#
+summary(lm1)#
+abline(lm1, col='red')
+#upload the picogreen fluorescence results#
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+inFile="bs_amplicon_library_picogreen_correct.csv"#
+pg=read.csv(inFile, header=T)#
+names(pg)=c("well","fluo")#
+head(pg)#
+#
+#assign the standard wells (B1-H1)#
+pg[,2]=pg[,2]-pg[pg$well=="A1",2]#
+pg=pg[pg$well!="A1",]#
+pg=pg[pg$fluo>0,]#
+pg$fluo=log(pg$fluo,10)#
+cal=pg[grep("[ABCDEFGH]1$",pg$well),]#
+cal$conc=log(c(100,100/3,100/3^2,100/3^3,100/3^4,100/3^5,100/3^6),10)#
+str(cal)#
+#plot the standard curve#
+plot(conc~fluo,cal,xaxt="n",yaxt="n",bty="n",xlab="fluorescence",ylab="DNA concentration (ng/ul)",mgp=c(2.1,1,0))#
+ll=lm(conc~fluo,cal)#
+abline(ll,col="red")#
+axis(1,at=cal$fluo,labels=round(10^(cal$fluo),0))#
+axis(2,at=cal$conc,labels=signif(10^(cal$conc),2))
+#calculate sample concentrations from the curve#
+sam=pg[-grep("[ABCDEFGH]1$",pg$well),]#
+sam=sam[sam$fluo>0,]#
+sam$conc=predict(ll,newdata=data.frame(fluo=sam$fluo))#
+points(conc~fluo,sam,col="cyan3")#
+legend("topleft",col=c("black","cyan3"),pch=1,c("calibrarion","samples"),bty="n")
+plot(density(sam[,2], xlab='ng/ul'))
+plot(density(sam[,2]),  xlab='ng/ul')
+plot(density(sam[,2]),  xlab='ng/ul', main = 'Concentration')
+plot(density(sam[,2]),  xlab='ng/ul', main = '')
+head(x)
+plot(density(x$molarity.nM.))
+plot(density(x$molarity.nM))
+plot(density(x$molarity.nM.))
+plot(density(x$molarity.nM. ))
+plot(density(x[,8]))
+x
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+x = read.csv('final_pico_green_results.csv')
+x
+setwd("/Users/grovesdixon/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/bisulfite_labwork_files")#
+x = read.csv('final_pico_green_results.csv')#
+x
+plot(density(x[,8]))
+hist(x[,8])
+hist(x[,8], xlab='Molarity (nM)')
+hist(x[,8], xlab='Molarity (nM)', main='Molarity')
+mol = x[,8]
+summary(mol)
+stdv(mol)
+sd(mol)

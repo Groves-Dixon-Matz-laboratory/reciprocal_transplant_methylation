@@ -1,0 +1,31 @@
+LOCUS       LOC107327073             436 bp ds-DNA     linear       09-JAN-2017
+DEFINITION  .
+ACCESSION   
+VERSION     
+SOURCE      .
+  ORGANISM  .
+COMMENT     
+COMMENT     ApEinfo:methylated:1
+FEATURES             Location/Qualifiers
+     misc_feature    101..128
+                     /label=forward
+                     /ApEinfo_fwdcolor="#ff0000"
+                     /ApEinfo_revcolor="#ff0000"
+                     /ApEinfo_graphicformat="arrow_data {{0 1 2 0 0 -1} {} 0}
+                     width 5 offset 0"
+     misc_feature    351..380
+                     /label=reverse
+                     /ApEinfo_fwdcolor="#0000ff"
+                     /ApEinfo_revcolor="#0000ff"
+                     /ApEinfo_graphicformat="arrow_data {{0 1 2 0 0 -1} {} 0}
+                     width 5 offset 0"
+ORIGIN
+        1 TGTAAGATGA GGTAAGGAAG AGATTTTTTA ATTATGGAAT CGTTAAAGAA TAATTGATAG
+       61 TAAGAAAATT TGTTTAGTTT AGGAGTGGTA TAAAGGAATT TTTTTGCGAG GTTGATTTTG
+      121 TTATTATGTT TTTAAAATTT GAAGGATTTG GTTTTATTGT TTTTGAAGTT TTATTAGTAG
+      181 GTTTATTAGT TTTTGTGGGG AGTAATTTAG GATTTGTAAG TGTAATAAGG GATTTATTTT
+      241 TGGGAGTATG TAGTATAGTT GATTTAGATG ATTTTATTAA ATGGGTTGAA GTAATTGAGC
+      301 GTGTTTGTGT TAGATACGGA GTGTGTTTTA AAGAAATTAA AATGTTAAGC GAATGTTATG
+      361 GAAAGGAATA TGTTTGGAAA ATATAATGTA AAGTATTTGT CGTACGATTA TCGGGAATGA
+      421 TTAGTGATGA TTAAGG    
+//

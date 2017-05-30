@@ -1,0 +1,56 @@
+analysis_walkthrough.txt
+Groves Dixon
+1-13-17
+
+Steps for analysis of processed MBDseq and Tagseq data
+
+To prepare MBDseq and Tagseq results for these analyess follow steps in MBD-seq_Data_Processing_Walkthrough.txt
+From this you should have two counts tables:
+	promoter_gbm_counts_p-1000_200.tsv  -- table of MBD-seq read counts for promoters and coding sequences
+	all_rnaseq_counts.txt               -- table of tag-seq read counts for coding sequences
+
+
+With these count tables in hand, run the following scripts in order:
+
+
+DEseq_unbound_v_flowthrough.R
+	Take raw MBDseq counts, estimate absolute methylation by comparing captured and flowthrough samples, save subsetted counts files, plot pieces of figure 1
+
+DEseq_gene_bodies.R
+	Test for differential gene body methylation by origin and transplantation
+	
+DEseq_Tagseq
+	Test for differential transcription by origin and transplantation
+
+
+bisulfite1_initialize.R
+	prepare bisulfite data from bismark
+
+bisulfite2_ori_trans.R
+	plot differences between groups for bisulfite data and MBDseq for comparison
+
+
+
+
+
+
+plot_heatmaps.R
+	Build overall correlation heatmaps for tagseq and MBDseq illustrating strong genetic component to both
+
+
+	
+
+
+plot_mbd_counts.R
+
+
+
+
+
+
+
+
+Additional Scripts for analyses not included in publication:
+
+DEseq_promoters
+	Test for differential promoter methylation by origin and transplantation

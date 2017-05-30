@@ -1,24 +1,44 @@
+#DEseq_unbound_v_flowthrough.R
+#Groves Dixon
+#last updated 5-16-17
+
+#Purpose: take raw MBD-seq counts, estimate absolute methylation by 
+#comparing captured and flowthrough samples, save subsetted counts for 
+#further analysis; plot pieces of figure 1
+
+
+
 #---------------- Upload the data ------------------
 #SET UP THE DATA TO RUN DESEQ
 library('DESeq2')
 #SAVE YOUR DIRECTORY NAME AND SET WD
-directory<-"/Users/grovesdixon/lab_files/projects/recip_meth/deseq_12_13_16"
+directory<-"~/gitreps/reciprocal_transplant_methylation/"
 setwd(directory)
 
-#READ IN THE COUNTS DATA. THESE ARE EXPORTED AT THE END OF THE MBD-seq data processing pipeline (see MBD-seq_Data_Processing_Walkthrough).
-counts=read.table('promoter_gbm_counts_p500_a0.tsv',header=TRUE,row.names=1); head(counts)  #this one has promoter assigned as 1000 bp overlapping the tss
-counts=read.table('promoter_gbm_counts_p-500.tsv',header=TRUE,row.names=1); head(counts)  #this one has promoter assigned as position -1000 through -500 to leave buffer from gbm signal
-counts=read.table('promoter_gbm_counts_p900-100.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #this one has promoter assigned as position -1000 through -500 to leave buffer from gbm signal
-counts=read.table('promoter_gbm_counts_p250_both.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #small promoter boundary just 250 to both sides of promoter
-
-counts=read.table('promoter_gbm_counts_p-1000_200.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #small promo
+#READ IN THE COUNTS DATA. THESE ARE EXPORTED AT THE END OF THE MBD-seq data processing pipeline (see MBD-# seq_Data_Processing_Walkthrough).
+counts=read.table('datasets/promoter_gbm_counts_p-1000_200.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #small promo
 head(counts)
 dim(counts)
+
+
+#LOOK AT HOW MANY READS MAPPED TO ANNOTATED CODING SEQUENCES
+wdat = counts[grep("__", rownames(counts)),]
+gdat = counts[!rownames(counts) %in% rownames(wdat),]
+dim(counts)
+dim(wdat)
+dim(gdat)
+
+#get stats for CDS alignments only
+gcounts = apply(gdat, 2, sum)
+summary(gcounts)
+
+
+#now remove the special cases counts
 remove = rownames(counts)[grep("__", rownames(counts))]
 counts = counts[!rownames(counts) %in% remove,]
 dim(counts)
 
-#gather the feature types and genbank names
+#gather the feature types and locus names
 featureType = c()
 genBank = c()
 for (i in rownames(counts)){
@@ -40,7 +60,7 @@ geneNames = genBank[featureType == 'promoter']
 rownames(pcounts) = geneNames
 head(pcounts)
 dim(pcounts)
-save(pcounts, file="promoter_counts_p-1000_200.Rdata")
+save(pcounts, file="datasets/promoter_counts_p-1000_200.Rdata")
 
 
 
@@ -50,12 +70,12 @@ geneNames = genBank[featureType == 'exon']
 rownames(gcounts) = geneNames
 head(gcounts)
 dim(gcounts)
-save(gcounts, file="gbm_counts_p-1000_200.Rdata")
+save(gcounts, file="datasets/gbm_counts_p-1000_200.Rdata")
 
 
 #now select the gene context you want to get methylation for
-counts = pcounts
-counts = gcounts
+# counts = pcounts  #for promoters
+counts = gcounts    #for gene bodies
 
 
 #subset for the job1 samples that were paired ub and met samples
@@ -111,42 +131,26 @@ summary(res)
 hist(res$log2FoldChange, breaks = 50)
 
 #save the analysis
-save.image('capturedVflowthroughResults_p-1000_200.Rdata')
+save.image('datasets/capturedVflowthroughResults_p-1000_200.Rdata')
+
 
 #SAVE YOUR DIRECTORY NAME AND SET WD
-directory<-"/Users/grovesdixon/lab_files/projects/recip_meth/deseq_12_13_16"
+# save(res, file = 'capturedVflowthroughResults.Rdata')
+directory<-"~/gitreps/reciprocal_transplant_methylation/"
 setwd(directory)
-lnames = load('capturedVflowthroughResults_p-1000_200.Rdata')
-lnames
-# all.res = res
-# low.res = res
-# high.res = res
-# head(low.res)
-# head(all.res)
-# head(high.res)
-# par(mfrow=c(3,1))
-# plot(density(na.omit(high.res$log2FoldChange)), col = 'red', main = 'density mbd scores')
-# lines(density(na.omit(low.res$log2FoldChange)), col = 'blue')
-# lines(density(na.omit(all.res$log2FoldChange)), col = 'black')
-# legend(x=5,y=.2, legend=c('high', 'low', 'all'), fill=c('red', 'blue', 'black'))
+source("scripts/reciprocal_methylation_project_functions.R")
+lnames = load('datasets/capturedVflowthroughResults_p-1000_200.Rdata')
 
 
 #--------- plot figure 1 ---------------
-#upload the iso2seq table which we'll need later
-# save(res, file = 'capturedVflowthroughResults.Rdata')
-directory<-"/Users/grovesdixon/lab_files/projects/recip_meth/deseq_11-4-16/dig_combo_mapped"
-setwd(directory)
-source("../../reciprocal_methylation_project_functions.R")
-# load('capturedVflowthroughResults.Rdata')
-
 
 #UPLOAD CPG DATA AND MERGE WITH MBD-SCORES
-cdat = read.table("digitifera_rna_cpg_data.tsv", header = T) #estimated based on coding regions (Amil_CD)
+cdat = read.table("datasets/digitifera_rna_cpg_data.tsv", header = T) #estimated based on coding regions (see Adigitifera_annotations.txt)
 cdat$cpgOE = (cdat$CpG/(cdat$C*cdat$G))*(cdat$length^2/(cdat$length-1))##equation in Gavery and Roberts (oysters)
 colnames(cdat)[1]<-'genbank'
 head(cdat)
 #upload the rna annotation data output from adigitifera_anotation_table.py (these must be somewhere as a table but I couldn't find them)
-adat = read.table("rna_annotations.tsv", sep = "\t", header = T)
+adat = read.table("datasets/adigitifera_rna_annotations.tsv", sep = "\t", header = T) #from here: ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera/RNA/rna.gbk.gz
 adat = adat[!duplicated(adat$locusName),]
 head(adat)
 dim(adat)
@@ -154,23 +158,12 @@ dim(adat)
 mergedat = merge(cdat, adat, by = 'genbank')
 rownames(mergedat) = mergedat$locusName
 
-#upload protein annotations
-# protdat = read.table("prot_annotations.tsv", sep = "\t", header = T)
-# protdat = protdat[!duplicated(protdat$locusName),]
-# head(protdat)
-# mergedat = merge(protdat, adat, by = 'locusName')
-# colnames(mergedat) = c('locusName', 'genBank', 'gi', 'rna.genBank', 'rna.gi')
-# head(mergedat)
 
 #merge with mbd-seq data based on geneID
 res$genBank = rownames(res)
 res2 = merge(data.frame(res), mergedat, by = 0)
 head(res2)
 dim(res2)
-# colnames(cdat)[1]='rna.genBank'
-# res3 = merge(res2, cdat, by = 'rna.genBank')
-# head(res3)
-# dim(res3)
 
 #BUILD THE PLOTS
 
@@ -183,22 +176,60 @@ adj = .95
 alpha = 0.05
 
 #plot distribution
-par(mar = c(4,4,1.5, 0) + 0.1)
-par(mfrow = c(1,2))
-x = hist(res$log2FoldChange, breaks = 70, xlim = c(-7, 7),main = "", xlab = 'Log2 Fold Difference')
-mtext('A', side = 3, line = 0, adj = 0, cex = 1.5)
+par(mfrow = c(1,1))
+x = hist(res$log2FoldChange, breaks = 70, xlim = c(-7, 7),main = "", xlab = 'MBD-score', mgp=MGP)
+# mtext('A', side = 3, line = 0, adj = 0, cex = 1.5)
 
 #plot correlation with CpGoe
 PCH = 19
 CEX = 0.2
 LAS = 0
-alpha = .1
-par(mar = c(4,3.5,1.5,1) + 0.1)
-r = plot.lm('log2FoldChange', 'cpgOE', res2, '\n', '\n', limits = T, c(-7, 7), ylim = c(0, 1.5), point.color = 'black', print.line = F)
-title(paste(paste('r =', r[1]), "", sep = ""), line = -1, adj = adj, font.main = 3)
-title(ylab = expression("CpG"["o/e"]), line = 2.25, cex.lab = cex.lab)
-title(xlab = 'MBD-score', cex.lab = cex.lab, line = 2.5)
-mtext('B', side = 3, line = 0, adj = 0, cex = 1.5)
+alpha = .05
+plot(res2[,'cpgOE'] ~ res2[,'log2FoldChange'], xlab ="MBD-score", ylab =expression("CpG"["o/e"]), col = alpha('black', alpha), xlim=c(-7,7), ylim = c(0, 1.5), axes = F, cex.lab = cex.lab, pch = PCH, cex = CEX, las = LAS, mgp=MGP);axis(1,mgp=MGP);axis(2,mgp=MGP)
+z = cor.test(res2[,'log2FoldChange'], res2[,'cpgOE'], method = "spearman")
+r = signif(z$estimate, digits = 2)
+title(bquote(rho ~ "=" ~ .(r[1]) * "****"), line = -1, adj = adj, font.main = 3)
+
+
+
+#plot correlation with bisulfite data
+lnames=load('datasets/methPct_mbd_score.Rdata')
+#do it Mclearth 2016 style (Statistical Rethinking)
+library('rethinking')
+gene.mns$logm=log(gene.mns$methPct, 2)
+#set up model using map
+m1 <- map(
+		alist(
+		logm ~ dnorm(mu, sigma),
+		mu <- a + b*mbd.score,
+		a~dnorm(0, 10),
+		b~dnorm(.1, 2),
+		sigma~dunif(0,50)
+		), 
+		data= gene.mns)
+	
+
+precis(m1)
+mbd.seq <- seq(from=-4, to=0.5, length.out=1000)
+pred.dat <- list(mbd.score=mbd.seq)
+mu<-link(m1, data=pred.dat)
+mu.mean = apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI, prob=.95)
+sim.mbd<-sim(m1, data=pred.dat)
+mbd.PI<-apply(sim.mbd, 2, PI, prob=.95)
+
+#plot results
+plot(log(gene.mns$methPct,2)~gene.mns$mbd.score, ylab = expression(paste('log'[2], ' Mean % Methylation')), xlab = 'MBD-score', cex=1, axes=T,mgp=MGP)
+lines(mbd.seq, mu.mean, col='red')
+shade(mu.PI, mbd.seq)
+shade(mbd.PI, mbd.seq)
+lm2=lm(log(gene.mns$methPct,2)~gene.mns$mbd.score)
+r2=sprintf("%.2f", round(summary(lm2)$r.squared, digits=2))
+p=summary(lm2)$coefficients[2,4]
+p
+title(bquote("R"^2 ~ "=" ~ .(r2) * "***"), line = -.75, adj = .1, font.main = 3)
+
+
 #----------------------------------------
 
 
@@ -240,7 +271,7 @@ lowStrong = classes[classes$class == 2,]
 lowStrong = min(classes$mbd.score[classes$mbd.score > -2])
 separator=mean(c(hiWeak, lowStrong))
 abline(v=separator, lwd = 2)
-save(classes, file="/Users/grovesdixon/lab_files/projects/recip_meth/deseq_12_13_16/mbd_classes_p-1000_200.Rdata")
+save(classes, file="datasets/mbd_classes_p-1000_200.Rdata")
 #--------------------------------------------------------------------------------------
 
 #use Bayesian Information Criterion to select the optimal mixture model/number of components
@@ -257,7 +288,7 @@ classes = data.frame(rownames(mod2$class
 
 # make a plot showing the distribution of MBD-scores
 # This takes a long time, so keep commented out if you don't need
-and the locations/densities of the mixture components
+#and the locations/densities of the mixture components
 par(mfrow = c(2, 1))
 par(mar = c(0, 4, 0, 2) + .1)
 hist(mdat$mbd.score, breaks = 70, xlim = c(-5.3, 10), main = "", xlab = "\n", axes = F)

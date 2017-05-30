@@ -1,0 +1,41 @@
+#Bisulfite_amplicon_sequencing Walkthrough
+#Instructions for targeted sequencing of bisulfite converted DNA (Abey and Shendure 2012; Masser et al. 2013, Masser et al. 2015)
+#Groves Dixon
+#12/8/16
+
+
+
+#### SELECT TARGET GENES OF INTEREST ####
+#Want genes that show large variation in methylation by MBD-seq data
+#Want genes that are interesting
+#differentially methylated genes flagged by DESeq
+#top Kmes for modules of interest
+#mixture of genes from strongly and weakly methylated classes
+
+#for list of genes see excel file bisulfite_seq_metadata.excel
+
+
+
+############ DESIGN PRIMERS ############
+#grab the lines from the gff that match with the mRNA of interest
+#then reduce down to only exons
+#then export the slices of the genome 
+
+
+
+prot='XP_015747516.1'
+grep $prot ref_Adig_1.1_scaffolds.gff3 > ${prot}_slice.tsv
+cut -f 1,4,5 ${prot}_slice.tsv > ${prot}_slice_table.tsv
+slice_fasta.py adig_zoox_combo.fa ${prot}_slice_table.tsv
+
+
+
+#choose a slice of sequence and plug into zymo bisulfite primer seeker tool: http://www.zymoresearch.com/tools/bisulfite-primer-seeker?message=ok
+#blastx the selected sequence to ensure it's what it's annotated as
+#record in primers section of gene_to_bisulfite.excel
+
+#a final fasta file of the selected slices there were put into zymo is saved as:
+
+
+
+

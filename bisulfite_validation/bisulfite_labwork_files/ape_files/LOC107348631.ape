@@ -1,0 +1,30 @@
+LOCUS       New_DNA                  401 bp ds-DNA     linear       12-JAN-2017
+DEFINITION  .
+ACCESSION   
+VERSION     
+SOURCE      .
+  ORGANISM  .
+COMMENT     
+COMMENT     ApEinfo:methylated:1
+FEATURES             Location/Qualifiers
+     misc_feature    106..136
+                     /label=forward
+                     /ApEinfo_fwdcolor="cyan"
+                     /ApEinfo_revcolor="green"
+                     /ApEinfo_graphicformat="arrow_data {{0 1 2 0 0 -1} {} 0}
+                     width 5 offset 0"
+     misc_feature    319..355
+                     /label=reverse
+                     /ApEinfo_fwdcolor="cyan"
+                     /ApEinfo_revcolor="green"
+                     /ApEinfo_graphicformat="arrow_data {{0 1 2 0 0 -1} {} 0}
+                     width 5 offset 0"
+ORIGIN
+        1 AATATTAATT ATGTATGTTT TTATTAAGGG AGATGGTGTT GATTTTAAAA TCGATAGAGT
+       61 TTTAGTTTAT AGTAGTTGGA TTTATTAGTT TTTTTTATAA GTAGTGTAAA TTCGGAATAG
+      121 TTTTAATGAT GTGATGTATT TTGTATATTT TAGGGATAAA ATATAATAGT GTTTAAAAAG
+      181 TGTAATTCGA TAGTTTTTGT TGGTTGATTT TAATTGTTTT TTTCGTGATT TTTTTTTTGT
+      241 TTTTATGATA AATCGATTAG ATTATAGGAA AGTGTTGTTT GTTAATTAAG GATTAAAGTT
+      301 ATTTTATGGT ATTAGTTTGG ATGATTATTT TAATTGTTGT AGTTAAATGA TTGAAGATTA
+      361 TTTTTTTGTT AATTTATTAT TGTTTAGTAA GTTTTGTTGA A 
+//

@@ -1,0 +1,144 @@
+#Getting A.digitifera reference data
+#11-15-16
+
+##############################
+###### DOWNLOADING DATA ######
+##############################
+
+#Download the A. digitifera reference genome from NCBI: ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera
+#files:
+	70779_ref_Adig_1.1_chrUn.fa  #the reference genome
+	ref_Adig_1.1_scaffolds.gff3  #the gff 
+	
+#get promoter coordinates from the GFF
+pull_promoters.py -i ref_Adig_1.1_scaffolds.gff3 -o adig_promoters.gff
+
+#download the proteins from NCBI: ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera/protein/
+#files:
+	protein.fa.gz ##the protein fasta file
+	protein.gbk.gz ##the protein genbank file
+	ProteinTable10529_263537.txt  ## tabular protein names from here: https://www.ncbi.nlm.nih.gov/genome/proteins/10529?genome_assembly_id=263537
+		*!NOTE the data from ProteinTable10529_263537.txt are saved as a formatted R object file=ProteinTable.Rdata
+	
+#download the rnas from NCBI: ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera/RNA/
+#files:
+	rna.fa
+	rna.gbk
+	
+
+
+#get the RNA to Protein genbank annotation table
+wget ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera/RNA/rna.gbk.gz  #get rna.gbk.gz
+gunzip rna.gbk.gz 
+
+
+
+
+#download the uniprot files
+wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping_selected.tab.gz
+
+
+
+############################################
+###### GET GO TERMS FROM UNIPROT HITS ######
+############################################
+
+#blast the A. digitifera proteins against uniprot
+echo "blastp -db uniprot_sprot.fasta -query protein.fa -evalue 1e-5 -num_threads 48 -max_target_seqs 1 -outfmt 6 -out adig_uniprot_blast_out.tsv" > uniBlast
+launcher_creator.py -n uniBlast -j uniBlast -q normal -t 24:00:00 -a $allo -e $email -N 1 -w 1
+sbatch uniBlast.slurm
+
+#get the GO terms
+get_sp_go_terms.py -ids idmapping_selected.tab -br adig_uniprot_blast_out.tsv -o adig_go_terms.tsv
+#remove white space between GO terms
+sed -i.bak 's/; /;/g' adig_go_terms.tsv
+#get rid of RNAs that don't have GO terms
+cat adig_go_terms.tsv | awk '{if ($2!="")print}' > adig_uniprot_gos.tsv
+#scp the go term table to Mac to run GOmwu
+
+#############################################################
+######## SUPPLEMENT UNIPROT GOS WITH A.MILLEPORA GOS ########
+#############################################################
+#get blast pairs for Amillepora isogroups and Adigitifera proteins
+makeblastdb -in protein.fa -dbtype prot
+blastx -db protein.fa -query amil_longest_isogroups.fasta -evalue 1e-10 -num_threads 48 -max_target_seqs 1 -outfmt 6 -out amil-adig_blastx_out.tsv
+
+#rearrange the blast results
+cat amil-adig_blastx_out.tsv | awk '{split($2, a, "|");print a[4]"\t"$1}' > adig-amil_ortho_pairs.tsv
+
+
+#merge up the go terms
+merge_go_terms.py adig_uniprot_gos.tsv amil_iso2go.tab adig-amil_ortho_pairs.tsv 
+mv mergedIso2go.tsv adig_go_final.tsv
+
+
+
+
+######################################################
+###### GET BLAST HITS FOR A.MILLEPORA ISOGROUPS ######
+######################################################
+
+#if haven't already, get A.digitifera RNA annotations
+wget ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera/RNA/rna.fa.gz
+gunzip rna.fa.gz
+clean_seq_definitions.py -i rna.fa -delimit "|" -pos 4 -o rna_genbank.fa
+
+
+#blast Amil Isogroups to Adig predicted RNAs
+longest_isogroup.py amil.fasta > amil_longest_isogroups.fasta
+makeblastdb -in amil_longest_isogroups.fasta -dbtype nucl
+makeblastdb -in rna_genbank.fa -dbtype nucl
+blastn -query amil_longest_isogroups.fasta -db rna_genbank.fa -out amil_to_adig_blast.tsv -evalue 1e-10 -num_threads 48 -max_target_seqs 1 -outfmt 6
+blastn -query rna_genbank.fa -db amil_longest_isogroups.fasta -out adig_to_amil_blast.tsv -evalue 1e-10 -num_threads 48 -max_target_seqs 1 -outfmt 6
+
+
+#build table of top hits
+echo "isogroup\tgenbank" > amil_adig_RNA_pairs.tsv 
+cut -f 1,2 amil_to_adig_blast.tsv | uniq >> amil_adig_RNA_pairs.tsv
+
+
+
+#note that a tabular form of the protein annotations are available here: https://www.ncbi.nlm.nih.gov/genome/?term=acropora+digitifera
+#but I could not find a similar table for the RNA annotations, but the information can be parsed from the GFF
+adigitifera_annotation_table.py ref_Adig_1.1_scaffolds.gff3
+
+
+
+###################################
+###### GET PRMOTER LOCATIONS ######
+###################################
+pull_promoters.py -i ref_Adig_1.1_scaffolds.gff3 -o adig_promoters.gff
+
+
+
+
+
+#also download the rna and protein files along with their genbank annotation files
+rna.fa
+rna.gbk
+protein.fa
+protein.gbk
+
+#note that a tabular form of the protein annotations are available here: https://www.ncbi.nlm.nih.gov/genome/?term=acropora+digitifera
+#but I could not find a similar table for the RNA annotations, but the information can be parsed from the GFF
+adigitifera_annotation_table.py ref_Adig_1.1_scaffolds.gff3
+
+##############################################
+###### GET CpGo/e FOR A.DIGITIFERA RNAS ######
+##############################################
+wget ftp://ftp.ncbi.nih.gov/genomes/Acropora_digitifera/RNA/rna.fa.gz
+gunzip rna.fa.gz
+#note I initially expected the gi annotations in the fasta lines here to match with the "GeneID:" in the GFF, but this is not the case
+#the "LOC" name is a pain to 
+clean_seq_definitions.py -i rna.fa -delimit "|" -pos 4 -o rna_genbank.fa
+getCpGoe.py -i rna_genbank.fa -o digitifera_rna_cpg_data.tsv
+#send the output to Mac to analyze using DEseq_unbound_v_flowthrough.R
+
+
+
+###########################
+###### GET KOG TERMS ######
+###########################
+#paste the protein fasta into here:
+http://weizhong-lab.ucsd.edu/metagenomic-analysis/server/kog/

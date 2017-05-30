@@ -1,0 +1,1400 @@
+ores
+bsgenes
+ori.genes
+ori.genes
+bs.names = bsgenes[ori.genes,]
+bs.names
+bs.names$gene==ori.genes
+bs.names = bsgenes[ori.genes,'primerset']
+bs.names
+#---------- TEST CORRELATION BETWEEN DIFFERENCE IN MEAN MBD-SEQ COUNT AND BISULFITE METH PCT ----------##
+#arrange names of the origin effect and transplant effect genes#
+trans.genes = c('LOC107334334', 'LOC107352877', 'LOC107351808', 'LOC107327285')#
+ori.genes = c('LOC107327073', 'LOC107356898', 'LOC107358158', 'LOC107356899', 'LOC107358871', 'LOC107347512')#
+all.genes = c('LOC107327073', 'LOC107356898', 'LOC107358158', 'LOC107356899', 'LOC107358871', 'LOC107347512', 'LOC107334334', 'LOC107352877', 'LOC107351808', 'LOC107327285', 'LOC107350794', 'LOC107339795', 'LOC107336909')#
+#select the origin genes#
+bs.names = bsgenes[all.genes,'primerset']
+#select the origin genes#
+bs.names = bsgenes[all.genes,'primerset']#
+ori.names = bsgenes[ori.genes,'primerset']#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}#
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)#
+ores[ores$bs.names==15, 'bs.diffs']<-NA#
+colors = ores$bs.names#
+colors[colors %in% ori.names]<-19#
+colors[!colors %in% ori.names]<-1#
+colnames(ores) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+lm1=lm(ores$mbd.diffs~ores$bs.diffs)#
+summary(lm1)#
+abline(lm1, col='red')
+ores
+bs.names
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}
+mbd.diffs
+all.genes = c('LOC107327073', 'LOC107356898', 'LOC107358158', 'LOC107356899', 'LOC107358871', 'LOC107347512', 'LOC107334334', 'LOC107352877', 'LOC107351808', 'LOC107327285', 'LOC107350794', 'LOC107339795', 'LOC107336909')
+bsgenes
+rm(list=ls())
+#set working dir#
+setwd("~/git_Repositories/reciprocal_transplant_methylation/bisulfite_validation/")#
+source("~/git_Repositories/reciprocal_transplant_methylation/scripts/bisulfite_functions.R")#
+library(reshape)#
+library(plotrix)#
+#
+#------------ UPLOAD THE BISULFITE DATA ------------##
+#
+#upload sample name spreadsheet#
+snames = read.csv('data/sample_names.csv')#
+#
+#upload bismark data#
+d = read.table('data/all_PE_bismark_results.tsv', sep="\t", header = T) #(see Bisulfite_amplicon_data_process_Walkthrough.txt to generate)#
+head(snames)#
+head(d)#
+#------------ FILTER AND FORMAT THE BISULFITE DATA ------------##
+#
+#remove lines with fewer than 50 reads#
+sums=d$methReads + d$UnmethReads#
+d=d[sums>50,]#
+#
+#swap in the sample names for the bs ids#
+sample = as.character(lapply(d$file, function(x) as.character(snames$sample[snames$bsName == x][1])))#
+d$sample = sample#
+d$ori = substr(sample, start=1, stop=1)#
+d$trans = substr(sample, start=2, stop=2)#
+tp = c()#
+for (s in sample){#
+	time=strsplit(s, "_")[[1]][2]#
+	tp=append(tp, time)#
+}#
+d$tp=tp#
+d$cpgSite = factor(d$cpgSite)#
+head(d)#
+#
+#set up genotype variable#
+geno = c()#
+for (s in d$sample){#
+	geno0 = strsplit(s, "_")[[1]][1]#
+	geno1 = substr(geno0, start = 1, stop = 1)#
+	geno2 = substr(geno0, start = 3, stop = 5)#
+	genoFinal=paste(geno1, geno2, sep="")#
+	geno=append(geno, genoFinal)#
+}#
+d$geno=geno#
+#------------ REMOVE CPG CALLS THAT WERE INSIDE OF PRIMER BINDING SITES ------------##
+#
+#upload the locus names for the bisulfite tested genes#
+bsgenes = read.csv('../datasets/bisulfite_genes.csv') #note this file includes the 3
+bsgenes
+bsgenes = read.csv('../datasets/bisulfite_genes.csv') #note this file includes the 3' coordinates for the forward and reverse primers
+bsgenes
+bsgenes$locus = paste('locus', bsgenes$primerset, sep="")#
+rownames(bsgenes) = bsgenes$gene#
+head(bsgenes)#
+head(d)#
+#
+for (l in bsgenes$locus){#
+	sub = d[d$locus == l,]#
+	psub=bsgenes[bsgenes$locus==l,]#
+	unique(sub$position)#
+	inFor = unique(sub$position[sub$position < psub$f3prime])#
+	inRev = unique(sub$position[sub$position > psub$r3prime])#
+	bad=c(inFor, inRev)#
+	remove = paste(paste(l, c(inFor, inRev), sep = "_"), bad, sep = "_")#
+	print("-------------------")#
+	print(paste("Removing bad CpG sites for", l))#
+	print('Bad Positions:')#
+	print(bad)#
+	d=d[!d$cpgSite %in% remove,]#
+}#
+#reset the levels#
+d$cpgSite = factor(d$cpgSite)#
+#subset for timepoint 2#
+alld = d#
+d=d[d$tp == 2,]#
+dat=d
+#------------ LOOK AT DISTRIBUTION OF METHYLATION PERCENTAGES ------------##
+par(mfrow=c(3,1))#
+hist(d$methPct, main = "All CpG Sites", xlab="Percent Methylated")#
+cut=8#
+weak=d[d$methPct < cut,]#
+wpct = paste(round(nrow(weak)/nrow(d)*100, digits=1), "% of CpG Sites", sep="")#
+strong=d[d$methPct > cut,]#
+spct = paste(round(nrow(strong)/nrow(d)*100, digits=1), "% of CpG Sites", sep="")#
+hist(weak$methPct, main = paste("Unmethylation Sites", wpct, sep="\n"), xlab="Percent Methylated")#
+hist(strong$methPct, main = paste("Methylated Sites", spct, sep="\n"), xlab="Percent Methylated")#
+#
+#------------ CORRELATE WITH CAPTURED VS FLOWTHROUGH ------------##
+#
+#upload the capture vs flowthrough methylation scores for each gene#
+lnames = load('../datasets/capturedVflowthroughResults_p-1000_200.Rdata') #generated by DEseq_unbound_v_flowthrough#
+lnames#
+#format the data#
+mbd.dat = data.frame(res$log2FoldChange)#
+rownames(mbd.dat) = rownames(res)#
+colnames(mbd.dat) = c('mbd.score')#
+mbd.dat=na.omit(mbd.dat)#
+#clean up unneeded variables#
+for (i in lnames){#
+	remove(i)#
+}#
+head(mbd.dat)#
+#
+#merge with the locus data to fix names#
+mdat = merge(mbd.dat, bsgenes, by = 0)#
+head(mdat)#
+dim(bsgenes)#
+dim(mdat)#
+#
+#get mean methylation for #
+x = data.frame(tapply(d$methPct, d$locus, mean))#
+colnames(x) = c('methPct')#
+x$locus = rownames(x)#
+gene.mns = merge(x, mdat, by = 'locus')#
+head(gene.mns)#
+dim(gene.mns)#
+par(mfrow=c(1,1), xpd=F)#
+plot(gene.mns$mbd.score~gene.mns$methPct, xlab = 'Mean % Methylation', ylab = 'MBD-score')#
+lm1=lm(gene.mns$mbd.score~gene.mns$methPct)#
+summary(lm1)#
+abline(lm1, col='red')#
+#reverse the axes#
+plot(gene.mns$methPct~gene.mns$mbd.score, ylab = 'Mean % Methylation', xlab = 'MBD-score')#
+lm1=lm(gene.mns$methPct~gene.mns$mbd.score)#
+summary(lm1)#
+abline(lm1, col='red')#
+#
+#log transformed#
+plot(log(gene.mns$methPct,2)~gene.mns$mbd.score, ylab = expression(paste('log'[2], ' Mean % Methylation')), xlab = 'MBD-score', cex=1, axes=T)#
+# axis(1);axis(2)#
+lm1=lm(log(gene.mns$methPct,2)~gene.mns$mbd.score)#
+summary(lm1)#
+abline(lm1, col='red')#
+#do it Mclearth 2016 style (Statistical Rethinking)#
+library('rethinking')#
+gene.mns$logm=log(gene.mns$methPct, 2)#
+#set up model using map#
+m1 <- map(#
+		alist(#
+		logm ~ dnorm(mu, sigma),#
+		mu <- a + b*mbd.score,#
+		a~dnorm(0, 10),#
+		b~dnorm(.1, 2),#
+		sigma~dunif(0,50)#
+		), #
+		data= gene.mns)#
+precis(m1)#
+mbd.seq <- seq(from=-4, to=0.5, length.out=1000)#
+pred.dat <- list(mbd.score=mbd.seq)#
+mu<-link(m1, data=pred.dat)#
+mu.mean = apply(mu, 2, mean)#
+mu.PI <- apply(mu, 2, PI, prob=.95)#
+sim.mbd<-sim(m1, data=pred.dat)#
+mbd.PI<-apply(sim.mbd, 2, PI, prob=.95)#
+#
+#plot results#
+plot(log(gene.mns$methPct,2)~gene.mns$mbd.score, ylab = expression(paste('log'[2], ' Mean % Methylation')), xlab = 'MBD-score', cex=1, axes=T,mgp=c(2.1,1,0))#
+lines(mbd.seq, mu.mean, col='red')#
+shade(mu.PI, mbd.seq)#
+shade(mbd.PI, mbd.seq)
+gene.mns
+bsgenes
+save(gene.mns, file="../datasets/methPct_mbd_score.Rdata")#
+save(bsgenes, d, file='../datasets/bisulfite_dat.Rdata')
+rm(list=ls())
+setwd("~/gitreps/reciprocal_transplant_methylation/bisulfite_validation/")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/bisulfite_functions.R")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")#
+lnames = load("../datasets/ProteinTable.Rdata")#
+lnames = load("../datasets/deseqObjects_GENEBODIES_promoter1000_200.Rdata")#
+#
+library(DESeq2)#
+library(reshape)#
+library(plotrix)#
+#---------- LOOK AT GENES WITH EXPECTED ORIGIN EFFECTS ----------##
+lnames=load("../datasets/bisulfite_dat.Rdata")#
+lnames#
+#locus 13#
+par(mfrow=c(1,2))#
+res=plot.mean.meth(d, 'locus13', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus13', 'ori', 'By Origin')#
+#locus 14#
+res=plot.mean.meth(d, 'locus14', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus14', 'ori', 'By Origin', plus=2)#
+#locus 15 (only has a single Orpheus sample, do not use)#
+# res=plot.mean.meth(dat, 'locus15', 'ori', 'methPct', 'Origin')#
+# gene.meth.barplot(dat, 'locus15', 'ori', 'By Origin')#
+#locus 16#
+res=plot.mean.meth(d, 'locus16', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus16', 'ori', 'By Origin', plus=.75)#
+#
+#locus 17 (only has a single representative originating from Orpheus do not use)#
+# res=plot.mean.meth(d, 'locus17', 'ori', 'methPct', 'Origin')#
+# gene.meth.barplot(d, 'locus17', 'ori', 'By Origin')#
+#
+#locus 19#
+res=plot.mean.meth(d, 'locus19', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus19', 'ori', 'By Origin', plus=.75)#
+#
+#plot the mbd-seq data for each of the above genes#
+bsgenes#
+ori.genes = c('LOC107327073', 'LOC107356898', 'LOC107356899', 'LOC107347512')#
+for (g in ori.genes){#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+}#
+#---------- LOOK AT GENES WITH EXPECTED TRANSPLANT EFFECTS ----------##
+#
+#locus18#
+##Note that locus 18 only worked for samples originating in Keppels.#
+#Don't trust this one#
+# res=plot.mean.meth(dat, 'locus18', 'trans', 'methPct', 'Transplant')#
+# plot.mean.pair.diff(dat, 'locus18', 'trans', 'methPct', 'Origin', 'K')#
+# gene.meth.barplot(dat, 'locus18', 'trans', 'Transplant')#
+#
+#locus23#
+par(mfrow=c(1,3))#
+res=plot.mean.meth(d, 'locus23', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus23', 'trans', 'methPct', 'Origin', 'K')#
+g=gene.meth.barplot(d, 'locus23', 'trans', 'Transplant', plus=.75)#
+#locus24#
+res=plot.mean.meth(d, 'locus24', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus24', 'trans', 'methPct', 'Origin', 'K')#
+gene.meth.barplot(d, 'locus24', 'trans', 'Transplant')#
+#
+#locus25#
+res=plot.mean.meth(d, 'locus25', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus25', 'trans', 'methPct', 'Origin', 'K')#
+gene.meth.barplot(d, 'locus25', 'trans', 'Transplant', plus=.1)#
+#
+#plot the mbd-seq data for these#
+bsgenes#
+trans.genes = c('LOC107352877', 'LOC107351808', 'LOC107327285')#
+for (g in trans.genes){#
+	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')#
+}#
+#---------- TEST CORRELATION BETWEEN DIFFERENCE IN MEAN MBD-SEQ COUNT AND BISULFITE METH PCT ----------##
+#arrange names of the origin effect and transplant effect genes
+bsgenes
+trans.genes = bsgenes[bsgenes$effect == 'transplant',]
+for (g in trans.genes){#
+	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')#
+}
+trans.genes = bsgenes[bsgenes$effect == 'transplant', 'gene']
+trans.genes
+rm(list=ls())
+#set working dir#
+setwd("~/gitreps/reciprocal_transplant_methylation/bisulfite_validation/")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/bisulfite_functions.R")#
+library(reshape)#
+library(plotrix)
+#------------ UPLOAD THE BISULFITE DATA ------------##
+#
+#upload sample name spreadsheet#
+snames = read.csv('data/sample_names.csv')#
+#
+#upload bismark data#
+d = read.table('data/all_PE_bismark_results.tsv', sep="\t", header = T) #(see Bisulfite_amplicon_data_process_Walkthrough.txt to generate)#
+head(snames)#
+head(d)
+#------------ FILTER AND FORMAT THE BISULFITE DATA ------------##
+#
+#remove lines with fewer than 50 reads#
+sums=d$methReads + d$UnmethReads#
+d=d[sums>50,]#
+#
+#swap in the sample names for the bs ids#
+sample = as.character(lapply(d$file, function(x) as.character(snames$sample[snames$bsName == x][1])))#
+d$sample = sample#
+d$ori = substr(sample, start=1, stop=1)#
+d$trans = substr(sample, start=2, stop=2)#
+tp = c()#
+for (s in sample){#
+	time=strsplit(s, "_")[[1]][2]#
+	tp=append(tp, time)#
+}#
+d$tp=tp#
+d$cpgSite = factor(d$cpgSite)#
+head(d)#
+#
+#set up genotype variable#
+geno = c()#
+for (s in d$sample){#
+	geno0 = strsplit(s, "_")[[1]][1]#
+	geno1 = substr(geno0, start = 1, stop = 1)#
+	geno2 = substr(geno0, start = 3, stop = 5)#
+	genoFinal=paste(geno1, geno2, sep="")#
+	geno=append(geno, genoFinal)#
+}#
+d$geno=geno#
+#------------ REMOVE CPG CALLS THAT WERE INSIDE OF PRIMER BINDING SITES ------------##
+#
+#upload the locus names for the bisulfite tested genes#
+bsgenes = read.csv('../datasets/bisulfite_genes.csv') #note this file includes the 3' coordinates for the forward and reverse primers#
+bsgenes$locus = paste('locus', bsgenes$primerset, sep="")#
+rownames(bsgenes) = bsgenes$gene#
+head(bsgenes)#
+head(d)#
+#
+for (l in bsgenes$locus){#
+	sub = d[d$locus == l,]#
+	psub=bsgenes[bsgenes$locus==l,]#
+	unique(sub$position)#
+	inFor = unique(sub$position[sub$position < psub$f3prime])#
+	inRev = unique(sub$position[sub$position > psub$r3prime])#
+	bad=c(inFor, inRev)#
+	remove = paste(paste(l, c(inFor, inRev), sep = "_"), bad, sep = "_")#
+	print("-------------------")#
+	print(paste("Removing bad CpG sites for", l))#
+	print('Bad Positions:')#
+	print(bad)#
+	d=d[!d$cpgSite %in% remove,]#
+}#
+#reset the levels#
+d$cpgSite = factor(d$cpgSite)#
+#subset for timepoint 2#
+alld = d#
+d=d[d$tp == 2,]#
+dat=d#
+#
+#------------ LOOK AT DISTRIBUTION OF METHYLATION PERCENTAGES ------------##
+par(mfrow=c(3,1))#
+hist(d$methPct, main = "All CpG Sites", xlab="Percent Methylated")#
+cut=8#
+weak=d[d$methPct < cut,]#
+wpct = paste(round(nrow(weak)/nrow(d)*100, digits=1), "% of CpG Sites", sep="")#
+strong=d[d$methPct > cut,]#
+spct = paste(round(nrow(strong)/nrow(d)*100, digits=1), "% of CpG Sites", sep="")#
+hist(weak$methPct, main = paste("Unmethylation Sites", wpct, sep="\n"), xlab="Percent Methylated")#
+hist(strong$methPct, main = paste("Methylated Sites", spct, sep="\n"), xlab="Percent Methylated")#
+#
+#------------ CORRELATE WITH
+#upload the capture vs flowthrough methylation scores for each gene#
+lnames = load('../datasets/capturedVflowthroughResults_p-1000_200.Rdata') #generated by DEseq_unbound_v_flowthrough#
+lnames#
+#format the data#
+mbd.dat = data.frame(res$log2FoldChange)#
+rownames(mbd.dat) = rownames(res)#
+colnames(mbd.dat) = c('mbd.score')#
+mbd.dat=na.omit(mbd.dat)#
+#clean up unneeded variables#
+for (i in lnames){#
+	remove(i)#
+}#
+head(mbd.dat)#
+#
+#merge with the locus data to fix names#
+mdat = merge(mbd.dat, bsgenes, by = 0)#
+head(mdat)#
+dim(bsgenes)#
+dim(mdat)#
+#
+#get mean methylation for #
+x = data.frame(tapply(d$methPct, d$locus, mean))#
+colnames(x) = c('methPct')#
+x$locus = rownames(x)#
+gene.mns = merge(x, mdat, by = 'locus')#
+head(gene.mns)#
+dim(gene.mns)#
+par(mfrow=c(1,1), xpd=F)#
+plot(gene.mns$mbd.score~gene.mns$methPct, xlab = 'Mean % Methylation', ylab = 'MBD-score')#
+lm1=lm(gene.mns$mbd.score~gene.mns$methPct)#
+summary(lm1)#
+abline(lm1, col='red')#
+#reverse the axes#
+plot(gene.mns$methPct~gene.mns$mbd.score, ylab = 'Mean % Methylation', xlab = 'MBD-score')#
+lm1=lm(gene.mns$methPct~gene.mns$mbd.score)#
+summary(lm1)#
+abline(lm1, col='red')#
+#
+#log transformed#
+plot(log(gene.mns$methPct,2)~gene.mns$mbd.score, ylab = expression(paste('log'[2], ' Mean % Methylation')), xlab = 'MBD-score', cex=1, axes=T)#
+# axis(1);axis(2)#
+lm1=lm(log(gene.mns$methPct,2)~gene.mns$mbd.score)#
+summary(lm1)#
+abline(lm1, col='red')#
+#do it Mclearth 2016 style (S
+#do it Mclearth 2016 style (Statistical Rethinking)#
+library('rethinking')#
+gene.mns$logm=log(gene.mns$methPct, 2)#
+#set up model using map#
+m1 <- map(#
+		alist(#
+		logm ~ dnorm(mu, sigma),#
+		mu <- a + b*mbd.score,#
+		a~dnorm(0, 10),#
+		b~dnorm(.1, 2),#
+		sigma~dunif(0,50)#
+		), #
+		data= gene.mns)#
+precis(m1)#
+mbd.seq <- seq(from=-4, to=0.5, length.out=1000)#
+pred.dat <- list(mbd.score=mbd.seq)#
+mu<-link(m1, data=pred.dat)#
+mu.mean = apply(mu, 2, mean)#
+mu.PI <- apply(mu, 2, PI, prob=.95)#
+sim.mbd<-sim(m1, data=pred.dat)#
+mbd.PI<-apply(sim.mbd, 2, PI, prob=.95)#
+#
+#plot results#
+plot(log(gene.mns$methPct,2)~gene.mns$mbd.score, ylab = expression(paste('log'[2], ' Mean % Methylation')), xlab = 'MBD-score', cex=1, axes=T,mgp=c(2.1,1,0))#
+lines(mbd.seq, mu.mean, col='red')#
+shade(mu.PI, mbd.seq)#
+shade(mbd.PI, mbd.seq)#
+save(gene.mns, file="../datasets/methPct_mbd_score.Rdata")#
+save(bsgenes, d, file='../datasets/bisulfite_dat.Rdata')
+rm(list=ls())
+setwd("~/gitreps/reciprocal_transplant_methylation/bisulfite_validation/")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/bisulfite_functions.R")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")#
+lnames = load("../datasets/ProteinTable.Rdata")#
+lnames = load("../datasets/deseqObjects_GENEBODIES_promoter1000_200.Rdata")#
+#
+library(DESeq2)#
+library(reshape)#
+library(plotrix)#
+#---------- LOOK AT GENES WITH EXPECTED ORIGIN EFFECTS ----------##
+lnames=load("../datasets/bisulfite_dat.Rdata")#
+lnames#
+#locus 13#
+par(mfrow=c(1,2))#
+res=plot.mean.meth(d, 'locus13', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus13', 'ori', 'By Origin')#
+#locus 14#
+res=plot.mean.meth(d, 'locus14', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus14', 'ori', 'By Origin', plus=2)#
+#locus 15 (only has a single Orpheus sample, do not use)#
+# res=plot.mean.meth(dat, 'locus15', 'ori', 'methPct', 'Origin')#
+# gene.meth.barplot(dat, 'locus15', 'ori', 'By Origin')#
+#locus 16#
+res=plot.mean.meth(d, 'locus16', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus16', 'ori', 'By Origin', plus=.75)#
+#
+#locus 17 (only has a single representative originating from Orpheus do not use)#
+# res=plot.mean.meth(d, 'locus17', 'ori', 'methPct', 'Origin')#
+# gene.meth.barplot(d, 'locus17', 'ori', 'By Origin')#
+#
+#locus 19#
+res=plot.mean.meth(d, 'locus19', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus19', 'ori', 'By Origin', plus=.75)#
+#
+#plot the mbd-seq data for each of the above genes#
+bsgenes#
+ori.genes = c('LOC107327073', 'LOC107356898', 'LOC107356899', 'LOC107347512')#
+for (g in ori.genes){#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+}#
+#---------- LOOK AT GENES WITH EXPECTED TRANSPLANT EFFECTS ----------##
+#
+#locus18#
+##Note that locus 18 only worked for samples originating in Keppels.#
+#Don't trust this one#
+# res=plot.mean.meth(dat, 'locus18', 'trans', 'methPct', 'Transplant')#
+# plot.mean.pair.diff(dat, 'locus18', 'trans', 'methPct', 'Origin', 'K')#
+# gene.meth.barplot(dat, 'locus18', 'trans', 'Transplant')#
+#
+#locus23#
+par(mfrow=c(1,3))#
+res=plot.mean.meth(d, 'locus23', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus23', 'trans', 'methPct', 'Origin', 'K')#
+g=gene.meth.barplot(d, 'locus23', 'trans', 'Transplant', plus=.75)#
+#locus24#
+res=plot.mean.meth(d, 'locus24', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus24', 'trans', 'methPct', 'Origin', 'K')#
+gene.meth.barplot(d, 'locus24', 'trans', 'Transplant')#
+#
+#locus25#
+res=plot.mean.meth(d, 'locus25', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus25', 'trans', 'methPct', 'Origin', 'K')#
+gene.meth.barplot(d, 'locus25', 'trans', 'Transplant', plus=.1)#
+#
+#plot the mbd-seq data for these#
+bsgenes
+trans.genes = bsgenes[bsgenes$effect == 'transplant', 'gene']
+trans.genes
+for (g in trans.genes){#
+	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')#
+}
+#set up gene names#
+bs.names = bsgenes[all.genes,'primerset']#
+ori.names = bsgenes[ori.genes,'primerset']#
+#
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}#
+#
+#assemble results and plot#
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)
+bs.names
+bs.names = bsgenes[all.genes,'primerset']
+head(bsgenes)
+bs.names = bsgenes[,'primerset']
+bs.names
+bs.names = bsgenes$primerset
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}
+all.genes = bsgenes$gene
+bs.names = bsgenes$primerset
+#set up two different gene ids#
+all.genes = bsgenes$gene#
+bs.names = bsgenes$primerset#
+#
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)
+ores
+colors = ores$bs.names
+bsgenes
+ori.genes = bsgenes$primerset[bsgenes$effect == 'origin',]
+ori.genes = bsgenes$primerset[bsgenes$effect=='origin']
+ori.genes
+colors = ores$bs.names
+ori.names = bsgenes$primerset[bsgenes$effect=='origin']
+colors = ores$bs.names
+colors
+colors[colors %in% ori.names]<-19
+colors[!colors %in% ori.names]<-1
+colors
+colnames(ores) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)
+lm1=lm(ores$mbd.diffs~ores$bs.diffs)#
+summary(lm1)#
+abline(lm1, col='red')
+legend('topleft', c('significant', 'not significant'), main='origin effect')
+?legend
+legend('topleft', c('significant', 'not significant'), title='origin effect')
+legend('topleft', c('significant', 'not significant'), title='origin effect', col=c('black', 'white'))
+legend('topleft', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+legend('topright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+?par
+par(mar=c(5, 4, 4, 6) + 0.1)
+legend('topright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+par(mar=c(5, 4, 4, 6) + 0.1)
+par(mar=c(5, 4, 4, 6) + 0.1)#
+legend('topright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)
+#plot#
+par(mar=c(5, 4, 4, 6) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('topright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)
+lm1
+summary(lm1)
+?text
+R2=summary(lm1)$coefficients
+R2
+R2=summary(lm1)$r.squared
+R2
+R2=round(summary(lm1)$r.squared, digits=2)
+R2
+text(bquote("R"[2]))
+text(x=-6, y=20, bquote("R"[2]))
+text(x=-6, y=20, bquote("R"^2))
+text(x=-6, y=20, bquote("R"^2~"="~.(R2)))
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-6, y=20, bquote("R"^2~"="~.(R2)))
+text(x=-6, y=20, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-6, y=20, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+text('topleft', bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+text(x=-5.8, y=20, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-5.8, y=20, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-5.6, y=22, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+text(x=-5.6, y=25, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+text(x=-5.6, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-5.6, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"))
+text(x=-5.6, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.5)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-5.6, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+text(x=-5.5, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+text(x=-5, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+text(x=-4.5, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.5, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+#plot#
+par(mar=c(5, 4, 4, 2) + 0.1)#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='origin effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2, axes=F)
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+axis(1);axis(2)
+#### FOR TRANSPLANT EFFECTS ####
+all.genes = bsgenes$gene#
+bs.names = bsgenes$primerset#
+trans.names = bsgenes$primerset[bsgenes$effect=='transplant']#
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in trans.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')#
+	mns = tapply(mdat$count, mdat[,'transplant'], mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$trans, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}
+tres = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)#
+colors = tres$bs.names
+colors
+tres = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')#
+	mns = tapply(mdat$count, mdat[,'transplant'], mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$trans, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}
+tres = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)
+tres
+colors[!colors %in% trans.names]<-1
+colors
+trans.names = bsgenes$primerset[bsgenes$effect=='transplant']
+trans.names
+colors = tres$bs.names
+colors
+trans.names
+colors[!colors %in% trans.names]<-1
+colors
+colors[colors %in% trans.names]<-19
+colors
+colnames(tres) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+lm1=lm(tres$mbd.diffs~tres$bs.diffs)#
+summary(lm1)#
+abline(lm1, col='red')
+colnames(tres) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+lm1=lm(tres$mbd.diffs~tres$bs.diffs)#
+R2=round(summary(lm1)$r.squared, digits=2)#
+summary(lm1)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+legend('topleft', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)
+summary(lm1)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4, y=12, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4, y=12, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, pch=2)
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4, y=12, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+text(x=-3, y=10, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=10, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+text(x=-3, y=8, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+text(x=-3, y=9, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=9, bquote("R"^2 ~ "=" ~ .(R2) * "n/s"), cex=1.2)
+text(x=-3, y=9, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=9, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=-1, y=12, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=1, y=12, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=0, y=12, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=-.5, y=12, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=-.5, y=13, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-.5, y=13, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+#plot#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+#assemble results#
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)#
+colors = ores$bs.names#
+colors[colors %in% ori.names]<-19#
+colors[!colors %in% ori.names]<-1#
+colnames(ores) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')#
+lm1=lm(ores$mbd.diffs~ores$bs.diffs)#
+R2=round(summary(lm1)$r.squared, digits=2)#
+summary(lm1)#
+#
+#plot#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+#set up two different gene ids#
+all.genes = bsgenes$gene#
+bs.names = bsgenes$primerset#
+ori.names = bsgenes$primerset[bsgenes$effect=='origin']#
+#
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}#
+#
+#assemble results#
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)#
+colors = ores$bs.names#
+colors[colors %in% ori.names]<-19#
+colors[!colors %in% ori.names]<-1#
+colnames(ores) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')#
+lm1=lm(ores$mbd.diffs~ores$bs.diffs)#
+R2=round(summary(lm1)$r.squared, digits=2)#
+summary(lm1)
+#plot#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+#plot#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-.5, y=13, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+lm1=lm(tres$mbd.diffs~tres$bs.diffs)#
+R2=round(summary(lm1)$r.squared, digits=2)#
+summary(lm1)#
+#
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-.5, y=13, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=-3, y=9, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=9, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=-3, y=7, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+R2=round(summary(lm1)$r.squared, digits=2)
+R2
+lm1=lm(tres$mbd.diffs~tres$bs.diffs)
+summary(lm1)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=7, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+colors = tres$bs.names#
+colors[!colors %in% trans.names]<-1#
+colors[colors %in% trans.names]<-19
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=7, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+colors
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=7, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)
+#plot#
+plot(tres$mbd.diffs~tres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('topleft', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-3, y=7, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+#combined#
+cres = rbind(na.omit(ores), na.omit(tres))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+hist(cres$mbd.diffs)#
+hist(cres$bs.diffs)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+summary(lm1)#
+abline(lm1, col='red')
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)
+abline(lm1, col='red')
+summary(lm1)
+legend('bottomright', c('significant', 'not significant'), title='Transplant Effect', pt.bg=c('black', 'white'), pch=21)
+text(x=-6, y=20, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+text(x=-5, y=20, bquote("R"^2 ~ "=" ~ .(R2)^"n/s"), cex=1.2)
+R2=round(summary(lm1)$r.squared, digits=2)
+summary(lm1)
+text(x=-5, y=20, bquote("R"^2 ~ "=" ~ .(R2)^"****"), cex=1.2)
+#plot#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=2)#
+abline(lm1, col='red')#
+text(x=-5, y=20, bquote("R"^2 ~ "=" ~ .(R2)^"****"), cex=1.2)
+text(x=-5, y=20, bquote("R"^2 ~ "=" ~ .(R2) * "****"), cex=1.2)
+#plot#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=2)#
+abline(lm1, col='red')#
+text(x=-5, y=20, bquote("R"^2 ~ "=" ~ .(R2) * "****"), cex=1.2)
+text(x=-5, y=22, bquote("R"^2 ~ "=" ~ .(R2) * "****"), cex=1.2)
+text(x=-5, y=25, bquote("R"^2 ~ "=" ~ .(R2) * "****"), cex=1.2)
+#plot#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=2)#
+abline(lm1, col='red')#
+text(x=-5, y=25, bquote("R"^2 ~ "=" ~ .(R2) * "****"), cex=1.2)
+head(cres)#
+par(mfrow=c(5,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in cres$bs.num){#
+	sub=cres[cres$bs.num != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}
+par(mfrow=c(5,5))
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in cres$bs.num){#
+	sub=cres[cres$bs.num != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}
+cres
+#jacknife#
+head(cres)#
+par(mfrow=c(5,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in cres$bs.names){#
+	sub=cres[cres$bs.num != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}#
+slopes
+for (i in cres$bs.names){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}
+-=14
+i=14
+sub=cres[cres$bs.names != i,]
+sub
+plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)
+lm1=lm(sub$mbd.diffs~ sub$bs.diffs)
+print(summary(lm1))
+sub
+cres$bs.names
+#jacknife#
+head(cres)#
+par(mfrow=c(5,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}#
+slopes#
+par(mfrow=c(1,1))#
+hist(slopes)
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=3)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	slopes=append(slopes, slp)#
+}
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	legend('bottomright', p)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', p)#
+	slopes=append(slopes, slp)#
+}
+?legend
+legend('bottomright', bquote(.(p)))
+bquote(.(p)
+)
+p
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	legend('bottomright', p)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', bquote(.(p)))#
+	slopes=append(slopes, slp)#
+}
+legend('bottomright', legend=bquote(.(p)))
+legend('bottomright', legend=bquote('p = '*.(p)))
+legend('bottomright', title=bquote('p = '*.(p)))
+legend('bottomright', legend='', title=bquote('p = '*.(p)))
+legend('bottomright', legend=bquote('p = '*.(p)))
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	legend('bottomright', p)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', legend=bquote('p = '*.(p)))#
+	slopes=append(slopes, slp)#
+}#
+slopes
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	legend('bottomright', p)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', legend=bquote('p = '*.(p)))#
+	slopes=append(slopes, slp)#
+}
+legend('bottomright', legend=bquote('p = '*.(p)))
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	pdat=plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	legend('bottomright', p)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', legend=bquote('p = '*.(p)))#
+	slopes=append(slopes, slp)#
+}
+pdat
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', legend=bquote('p = '*.(p)))#
+	slopes=append(slopes, slp)#
+}
+#jacknife#
+head(cres)#
+par(mfrow=c(3,5))#
+plot(cres$mbd.diffs~cres$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+lm1=lm(cres$mbd.diffs~cres$bs.diffs)#
+p=round(summary(lm1)$coefficients[2,4], digits=3)#
+text(x=-2,y=-60, labels=paste('p=',p))#
+summary(lm1)#
+abline(lm1, col='red')#
+title(main='All Bisulfite Loci')#
+title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+slopes=c(summary(lm1)$coefficients[2,1])#
+for (i in unique(cres$bs.names)){#
+	sub=cres[cres$bs.names != i,]#
+	plot(sub$mbd.diffs~ sub$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", cex=1.5)#
+	lm1=lm(sub$mbd.diffs~ sub$bs.diffs)#
+	print(summary(lm1))#
+	abline(lm1, col='red')#
+	slp=summary(lm1)$coefficients[2,1]#
+	p=round(summary(lm1)$coefficients[2,4], digits=5)#
+	title(main=paste(i, 'missing'))#
+	title(main=paste("\n\nR2=", round(summary(lm1)$r.squared, digits=3)))#
+	# text(x=-2,y=-60, labels=paste('p=',p))#
+	legend('bottomright', legend=bquote('p = '*.(p)))#
+	slopes=append(slopes, slp)#
+}

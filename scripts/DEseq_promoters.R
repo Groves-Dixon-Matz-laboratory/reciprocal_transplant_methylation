@@ -2,13 +2,11 @@
 #SET UP THE DATA TO RUN DESEQ
 library('DESeq2')
 #SAVE YOUR DIRECTORY NAME AND SET WD
-directory<-"/Users/grovesdixon/lab_files/projects/recip_meth/deseq_12_13_16"
+directory<-"~/git_Repositories/reciprocal_transplant_methylation"
 setwd(directory)
 
 #READ IN THE COUNTS DATA. THESE ARE EXPORTED AT THE END OF THE MBD-seq data processing pipeline (see MBD-seq_Data_Processing_Walkthrough).
-lnames=load("promoter_counts_p500_a0.Rdata")
-lnames=load("promoter_counts_p-500.Rdata")
-lnames=load("promoter_counts_p-1000_200.Rdata")
+lnames=load("datasets/promoter_counts_p-1000_200.Rdata")
 counts=pcounts
 head(counts)
 dim(counts)
