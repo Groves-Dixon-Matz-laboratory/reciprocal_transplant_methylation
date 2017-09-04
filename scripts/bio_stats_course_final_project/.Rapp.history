@@ -1,0 +1,550 @@
+############## SAVE/LOAD ###################
+setwd("~/gitreps/reciprocal_transplant_methylation/")#
+# #save/load for plastic genes#
+# save.image("datasets/DAPC_plastic_gbm2.Rdata")#
+load("datasets/DAPC_plastic_gbm2.Rdata")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
+####### GET FITNESS FIRST PC ##############
+head(traits)#
+fit=traits[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')]#
+rownames(fit) = traits$Colony.ID#
+fit2=na.omit(fit)#
+ko = grep("KO", rownames(fit2))#
+ok = grep("OK", rownames(fit2))#
+fit=fit2[c(ko,ok),]#
+fitpc=prcomp(fit, retx=TRUE, center=TRUE, scale=TRUE)#
+scores= fitpc$x#
+fitpc1 = data.frame(rownames(scores), scores[,1])#
+colnames(fitpc1) = c('Colony.ID', 'fitpc1')#
+x=merge(traits, fitpc1, by = 'Colony.ID', all.x=T)#
+sum(x$Colony.ID==traits$Colony.ID) == nrow(traits)#
+traits$fitpc1=x$fitpc1*-1#
+#
+#plot with ggbiplot#
+g <- ggbiplot(fitpc, choices = 1:2, obs.scale = 1, var.scale = 1, ellipse = T, varname.size = 4)#
+colors=get.cols(substr(rownames(fitpc$x), start=1, stop=2))#
+g <- g + geom_point(color=colors, size=3)#
+g <- g + theme(legend.position="top")#
+print(g)#
+#
+#plot with vanilla R#
+plot_vanilla_pca(fit, CEX=1.5, invert=-1)
+#### CORRELATION BETWEEN DAPC COORDINATES AND FITNESS PROXIES ######## #
+#choose the dapc results to look at#
+ld.col='gbm.ld1'#
+ld.col='ge.ld1'#
+ld.col='snp.ld1'#
+#
+t.traits=rbind(traits[traits$treat=='KO',], traits[traits$treat=='OK',])#
+#
+#plot correlations with fitness proxies#
+par(mfrow=c(2,3))#
+plot_ld_fitness(traits, 'GAIN', ld.col= ld.col)#
+plot_ld_fitness(traits, 'LIPID', ld.col= ld.col) #YLIM=c(0,0.3)#
+plot_ld_fitness(traits, 'PROTEIN', ld.col= ld.col)#
+plot_ld_fitness(traits, 'CARB', ld.col= ld.col)#
+plot_ld_fitness(traits, 'ZOOX', ld.col= ld.col)#
+plot_ld_fitness(traits, 'fitpc1', ld.col= ld.col)#
+#
+fit.proxy='fitpc1'#
+ld.col='gbm.ld1'#
+#
+#GATHER ACCLIMITIZATION DATA FOR SNP DATA#
+#(the inverse difference in dapc coordinate for transplants and#
+# the mean for home corals from the site they were transplanted to)#
+x= get_ld_diffs(traits, ld.col='snp.ld1', geno1='OO', geno2='KO')#
+y=get_ld_diffs(traits, ld.col='snp.ld1', geno1='KK', geno2='OK')#
+clim.snp=rbind(x,y)#
+clim.snp$z=zscore(clim.snp$acclim)*-1#
+#GATHER ACCLIMITIZATION DATA FOR GBM DATA#
+#(the inverse difference in dapc coordinate for transplants and#
+# the mean for home corals from the site they were transplanted to)#
+x= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='OO', geno2='KO')#
+y=get_ld_diffs(traits, ld.col='gbm.ld1', geno1='KK', geno2='OK')#
+clim.gbm=rbind(x,y)#
+clim.gbm$z=zscore(clim.gbm$acclim)*-1#
+#GATHER ACCLIMITIZATION DATA FOR GE DATA#
+#(the inverse difference in dapc coordinate for transplants and#
+# the mean for home corals from the site they were transplanted to)#
+x= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KO')#
+y=get_ld_diffs(traits, ld.col='ge.ld1', geno1='KK', geno2='OK')#
+clim.ge=rbind(x,y)#
+clim.ge$z=zscore(clim.ge$acclim)*-1#
+#GATHER PRE-ACCLIMITIZATION DATA FOR GBM DATA#
+#here look at how close the clone pair was to the alternative home mean#
+#this will help address whether already being closer to target methylome#
+#correlates with fitness proxies, or #
+#for KO samples#
+preko= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='OO', geno2='KK')#
+preko = preko[,c('geno', 'acclim')]#
+ko=traits[traits$treat=='KO',]#
+pko=merge(preko,ko, by = 'geno', all.x=T, all.y=F)#
+pko$z=zscore(pko$acclim)*-1#
+#
+#for OK samples#
+preok= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='KK', geno2='OO')#
+preok = preok[,c('geno', 'acclim')]#
+ok=traits[traits$treat=='OK',]#
+pok=merge(preok,ok, by = 'geno', all.x=T, all.y=F)#
+pok$z=zscore(pok$acclim)*-1#
+pre.clim=rbind(pko, pok)#
+#GATHER PRE-ACCLIMITIZATION DATA FOR GE DATA#
+#here look at how close the clone pair was to the alternative home mean#
+#this will help address whether already being closer to target methylome#
+#correlates with fitness proxies, or #
+#for KO samples#
+preko= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KK')#
+preko = preko[,c('geno', 'acclim')]#
+ko=traits[traits$treat=='KO',]#
+pko=merge(preko,ko, by = 'geno', all.x=T, all.y=F)#
+pko$z=zscore(pko$acclim)*-1#
+#
+#for OK samples#
+preok= get_ld_diffs(traits, ld.col='ge.ld1', geno1='KK', geno2='OO')#
+preok = preok[,c('geno', 'acclim')]#
+ok=traits[traits$treat=='OK',]#
+pok=merge(preok,ok, by = 'geno', all.x=T, all.y=F)#
+pok$z=zscore(pok$acclim)*-1#
+pre.clim.ge=rbind(pko, pok)#
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND TRANSCRIPTION#
+mclim=merge(clim.gbm, clim.ge, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y)#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)#
+#
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA#
+mclim=merge(clim.gbm, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y)#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)#
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA#
+mclim=merge(clim.ge, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y)#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)#
+#PLOT RESULTS#
+#pick the dataset#
+clim.df = clim.snp#
+clim.df = clim.gbm#
+clim.df = clim.ge#
+clim.df=pre.clim#
+#plot#
+XLAB = 'Match Score'#
+XLAB = 'Prematch'#
+XLAB = 'SNP Match'#
+XLAB = 'GE match'#
+quartz()#
+plot.subs=F#
+par(mfrow=c(1,1))#
+my_boxplot(clim.df, 'z', index='treat', YLAB=XLAB)#
+par(mfrow=c(2,3))#
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB)#
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB)#
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB)#
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB)#
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB)#
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)#
+par(mfrow=c(1,1))#
+#plot legend#
+plot.new(); legend('center', c('KO','OK'), pt.bg=c(color.set[2], color.set[3]), pch=21, pt.cex=1.5, inset=c(0,-.3), xpd=T)#
+#ASSEMBLE ACCLIMATION DATA FROM SNPS, GE AND GBM INTO SINGLE DATAFRAME#
+x=data.frame(clim.snp$geno, clim.snp$z)#
+colnames(x) = c('geno', 'snp.match')#
+m=traits#
+m$orik = m$ori#
+m$orik[m$orik=='K']<-1#
+m$orik[m$orik=='O']<-0#
+m$orik=as.numeric(m$orik)#
+y=m[,c('Colony.ID', 'CARB', 'PROTEIN', 'LIPID', 'ZOOX', 'GAIN', 'fitpc1', 'geno', 'orik', 'tra', 'treat')]#
+m=merge(y, x, by='geno', all=T)#
+x=data.frame(clim.gbm$Colony.ID, clim.gbm$z)#
+colnames(x) = c('Colony.ID', 'gbm.match')#
+m=merge(m,x,by='Colony.ID', all=T)#
+x=data.frame(clim.ge$Colony.ID, clim.ge$z)#
+colnames(x) = c('Colony.ID', 'ge.match')#
+m=merge(m,x,by='Colony.ID', all=T)#
+x=data.frame(pre.clim$Colony.ID, pre.clim$z)#
+colnames(x) = c('Colony.ID', 'pre.gbm.match')#
+m=merge(m,x,by='Colony.ID', all=T)#
+print(m)#
+shift.gbm = get_shift(gbm.dapc)#
+x=data.frame(shift.gbm$geno, shift.gbm$shift)#
+colnames(x) = c('geno', 'gbm.shift')#
+m=merge(m,x,by='geno', all.x=T)#
+shift.ge = get_shift(ge.dapc)#
+x=data.frame(shift.ge$geno, shift.ge$shift)#
+colnames(x) = c('geno', 'ge.shift')#
+m=merge(m,x,by='geno', all.x=T)#
+d=m#
+# save(d, file="~/Dixon_final_project/datasets/dapc_trait_data.Rdata")#
+#----------------- BUILD SUMMARY PCA --------------------------------------#
+#set up plotting data and variables#
+library(ggbiplot)#
+clim.gbm$match_score = clim.gbm$z#
+fit=clim.gbm[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN', 'match_score')]#
+fit=clim.gbm[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')]#
+rownames(fit) = clim.gbm$Colony.ID#
+fit=na.omit(fit)#
+c = data.frame(cor(fit, method = 'pearson'))#
+res.pca=prcomp(fit, retx=TRUE, center=TRUE, scale=TRUE)#
+#
+#test plot with ggplot methods#
+par(mfrow=c(1,1))#
+g <- ggbiplot(res.pca, choices = 1:2, obs.scale = 1, var.scale = 1, ellipse = T, varname.size = 4)#
+colors=get.cols(substr(rownames(res.pca$x), start=1, stop=2))#
+g <- g + geom_point(color=colors, size=3)#
+print(g)#
+#
+#make good plot#
+plot_vanilla_pca(fit, CEX=1.5)
+######### CLONE PAIR DAPC CORRELATION #############
+mclim=merge(pre.clim, clim.gbm, by ='Colony.ID')#
+colors=mclim$ori.x;colors[colors=='K']<-color.set[1];colors[colors=='O']<-color.set[4]#
+plot(mclim$z.y~mclim$z.x, xlab='Match-score (home)', ylab='Match-score (transplant)',pch=21, bg=colors, cex=2)#
+lmp=lm(mclim$z.y~mclim$z.x)#
+summary(lmp)#
+abline(lmp, lwd=2, lty=2)#
+legend('topleft', c('K','O'), pt.bg=c(color.set[1], color.set[4]), pch=21, pt.cex=1.5, inset=c(0,-.3), xpd=T)
+#------- ASSEMBLE FULL TRAIT TABLE WITH DAPC RESULTS -------##
+#add convergence#
+traits$gbm.conv = add_column_data(traits, clim.gbm, 'Colony.ID', 'match_score')#
+traits$ge.conv = add_column_data(traits, clim.ge, 'Colony.ID', 'z') #
+traits$snp.conv = add_column_data(traits, clim.snp, 'Colony.ID', 'z') #
+traits$gbm.pre = add_column_data(traits, pre.clim, 'Colony.ID', 'z') #
+traits$ge.pre = add_column_data(traits, pre.clim.ge, 'Colony.ID', 'z') #
+traits$gbm.shift = add_column_data(traits, shift.gbm, 'Colony.ID', 'shift') #
+traits$ge.shift = add_column_data(traits, shift.ge, 'Colony.ID', 'shift')#
+traits$geno<-NULL #
+save(traits, file="~/Desktop/full_traits_table.Rdata")#
+head(traits)#
+#CORRELATE SHIFT WITH PREACCLIMATION#
+x=merge(pre.clim, shift.gbm, by='geno', all.x=T)#
+plot(x$shift~x$z, pch=21, bg=get.cols(x$treat.y), cex=2, xlab='Pre-Acclimation', ylab='Shift');lmx=lm(x$shift~x$z);summary(lmx);abline(lmx, lty=2, lwd=2)#
+#CORRELATE PREACCLIMATION WITH SNP SIMILARITY#
+x=merge(clim.snp, pre.clim, by='geno', all.x=T)#
+plot(x$z.y~x$z.x, pch=21, bg=get.cols(x$treat.y), cex=2, xlab='SNP convergence', ylab='Pre-convergence (GBM)', main = '')#
+#
+lmx=lm(x$z.y~x$z.x);summary(lmx)#
+abline(lmx, lty=2, lwd=2)#
+text(x=-1.2, y=2, bquote('R'^'2'*'=0.266*'))#
+legend('right', c('KO','OK'), pt.bg=c(color.set[2], color.set[3]), pch=21, pt.cex=1.5, inset=c(0,-.1), xpd=T)#
+#CORRELATE SHIFT WITH FITNESS#
+#subset for transplants#
+t.traits = rbind(traits[traits$treat == 'KO',], traits[traits$treat == 'OK',])#
+x=merge(t.traits, shift.gbm, by='geno', all.x=T)#
+#
+par(mfrow=c(1,1))#
+my_boxplot(x, 'shift', index='treat', YLAB='Shift')#
+par(mfrow=c(2,3))#
+plot.subs=T#
+plot_acclim_fitness(x, 'GAIN', 'shift', plot.subs=plot.subs, XLAB='Shift')#
+plot_acclim_fitness(x, 'CARB', 'shift', plot.subs=plot.subs, XLAB='Shift')#
+plot_acclim_fitness(x, 'PROTEIN', 'shift', plot.subs=plot.subs, XLAB='Shift')#
+plot_acclim_fitness(x, 'LIPID', 'shift', plot.subs=plot.subs, XLAB='Shift')#
+plot_acclim_fitness(x, 'ZOOX', 'shift', plot.subs=plot.subs, XLAB='Shift')#
+plot_acclim_fitness(x, 'fitpc1', 'shift', plot.subs=plot.subs, XLAB='Shift')#
+par(mfrow=c(1,1))#
+head(x)#
+#RELATIVE CONTRIBUTIONS OF FACTORS TO FITNESS#
+# pie.colors=c('blue', 'darkturquoise', 'darkgreen', 'grey')#
+pie.colors = append(gg_color_hue(3), 'grey')#
+x=merge(pre.clim, shift.gbm, by='geno', all.x=T) #merged dataset with shift and preacclimation stats#
+par(mfrow=c(2,3))#
+g=preacc_shift_lm(x, 'GAIN', colors=pie.colors, angle=-30)#
+z=preacc_shift_lm(x, 'ZOOX', colors=pie.colors, angle=-40)#
+p=preacc_shift_lm(x, 'PROTEIN', colors=pie.colors, angle=0)#
+c=preacc_shift_lm(x, 'CARB', colors=pie.colors, angle=-40)#
+l=preacc_shift_lm(x, 'LIPID', colors=pie.colors, angle=-20)#
+fpc=preacc_shift_lm(x, 'fitpc1', colors=pie.colors, angle=-70)#
+#PLOT SINGLE PIECHART FOR FITPC1#
+par(mfrow=c(1,1))#
+lm.opt = lm(fitpc1 ~ z + shift + ori + z*ori, data=x)#
+summary(lm.opt)#
+av=anova(lm.opt)["Sum Sq"]#
+#
+x=data.frame(anova(lm.opt))#
+part.vars = av/sum(av)#
+res=data.frame(part.vars)#
+labels = c('Pre-Acc', 'Shift', 'Origin', 'Pre-Acc*Origin', 'Residuals')#
+rownames(res) = labels#
+res$labs=labels#
+ordered.labs = c('Shift', 'Pre-Acc', 'Pre-Acc*Origin', 'Residuals')#
+res=res[ordered.labs,]#
+pie.colors = append(gg_color_hue(3), 'grey')#
+perc = paste(round(res[,1], digits=2)*100, "%")#
+flabs = paste(ordered.labs, perc)#
+pie(x=res[,1],labels=flabs, main=fit.proxy, col=pie.colors, init.angle=-105, xpd=T)#
+#
+#plot as barplot#
+res#
+ordered.labs = rev(c('Shift', 'Pre-Acc', 'Pre-Acc*Origin', 'Origin', 'Residuals'))#
+res=res[ordered.labs,]#
+bpd=as.matrix((res[,1]*100))#
+rownames(bpd) = res$labs#
+pie.colors = append(c('grey'), gg_color_hue(4))#
+# bpd = bpd[order(bpd[,1]),]#
+par(mfrow=c(1,1))#
+barplot(bpd, col=pie.colors)#
+quartz()#
+plot.new()#
+legend('center', ordered.labs, pt.bg=pie.colors, pch=22, pt.cex=1.5)#
+#PLOT SINGLE PIECHART FOR MEAN VARIANCE ACROSS FIT PROXIES#
+par(mfrow=c(1,1))#
+res=rbind(g,z,p,c,l)#
+mns=tapply(res[,2], res$labs, mean)#
+mns=mns[order(mns)]#
+pie(mns, col=c('blue', 'darkturquoise', 'darkgreen', 'grey'))#
+#
+#make good plot#
+plot_vanilla_pca(fit, CEX=1.5)
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND TRANSCRIPTION#
+mclim=merge(clim.gbm, clim.ge, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y)#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)
+plot_ld_fitness(traits, 'fitpc1', ld.col= ld.col)
+plot_ld_fitness(traits, 'GAIN', ld.col= ld.col)
+plot_ld_fitness(traits, 'LIPID', ld.col= ld.col) #YLIM=c(0,0.3)
+plot_ld_fitness(traits, 'PROTEIN', ld.col= ld.col)
+plot_ld_fitness(traits, 'CARB', ld.col= ld.col)
+plot_ld_fitness(traits, 'ZOOX', ld.col= ld.col)
+plot_ld_fitness(traits, 'fitpc1', ld.col= ld.col)
+plot_ld_fitness(t.traits, 'fitpc1', ld.col= ld.col)
+head(traits)
+plot(fitpc1~gbm.conv, data=traits)
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)
+clim.df = clim.gbm
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)
+load("/Users/grovesdixon/gitreps/reciprocal_transplant_methylation/moduleEigengenes.Rdata")
+setwd("~/Dixon_final_project")#
+source('scripts/general_functions.R')#
+source('scripts/frequentist_functions.R')#
+#---------- SECTION 1:  load DAPC and physiological measures ----------##
+lnames = load("datasets/dapc_trait_data.Rdata")#
+lnames#
+head(d)#
+#
+#reduce to only the transplanted coral fragments#
+d=rbind(d[d$treat=='KO',], d[d$treat=='OK',])#
+#---------- SECTION 2: plot simple linear models for match-scores and physiological measures ----------##
+#Select which predictor variable to use#
+x='snp.match'#
+x='gbm.match'#
+x='ge.match'#
+#
+#plot linear models#
+quartz()#
+plot.subs=T#
+par(mfrow=c(2,3))#
+plot_acclim_fitness(d, 'GAIN', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'CARB', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'PROTEIN', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'LIPID', x, plot.subs=plot.subs)#
+# plot_acclim_fitness(d, 'ZOOX', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'fitpc1', x, plot.subs=plot.subs)#
+par(mfrow=c(1,1))#
+#---------- SECTION 3: compare predictive power of origin and gbm match ----------##
+#There is variation by origin (or transplant site) in the fitness proxies#
+#Test to make sure the gbm match score is the more important#
+#explanatory variable than origin for each proxy#
+par(mfrow=c(2,3))#
+for (fp in fit.proxies){#
+	boxplot(d[,fp]~d[,'treat'], ylab=fp)#
+}#
+#subset the dataset to remove any NA values for these variables#
+par(mfrow=c(1,1))#
+dat=na.omit(d[,c('fitpc1', 'gbm.match', 'orik')])#
+lm2=lm(fitpc1 ~ orik + gbm.match, data=dat)#
+summary(lm2)#
+plot_lm_coeffs(lm2)#
+#repeat above for all fitness proxies#
+quartz()#
+par(mfrow=c(2,3))#
+for (fp in fit.proxies){#
+	lmfp = lm(d[,fp] ~ d[,'orik'] + d[,'gbm.match'])#
+	print("------------------")#
+	print(fp)#
+	print(summary(lmfp))#
+	plot_lm_coeffs(lmfp, main=fp)#
+}#
+#
+#results are highly similar to Bayesian estimates
+#---------- SECTION 4: compare predictive power of shift vs pre-match ----------##
+#The gbm match score can be subdivided into two components:#
+#the pre-match, defined as the match score for the transplanted fragments' clone-mate#
+#and the shift, defined as the distance along the disciminant axis the transplanted#
+#fragment moved away from its clone-mate toward the mean for the natives of the alternative site#
+#
+#pre-match likely captures genetic variation, but could also potentially serve as a readout#
+#of epigenetic modificaiton due to local-scale environmental variation between colonies#
+#
+#shift should capture the plastic response of gbm to transplantation#
+#Note that shift and pre-match are negatively associated, and that Orpheus corals shifted more#
+par(mfrow=c(1,1))#
+plot(gbm.shift~pre.gbm.match, data=d, pch=21, bg=get.cols(d$treat), cex=2)#
+legend('topright', c('KO', 'OK'), pt.bg=get.cols(c('KO', 'OK')), pch=21, cex=1)#
+#compare the explanatory power of pre-match and shift for each fitness proxy#
+quartz()#
+par(mfrow=c(2,3))#
+for (fp in fit.proxies){#
+	lmfp = lm(d[,fp] ~ d[,'pre.gbm.match'] + d[,'gbm.shift'])#
+	print("------------------")#
+	print(fp)#
+	print(summary(lmfp))#
+	plot_lm_coeffs(lmfp, main=fp)#
+}#
+#now use AIC to determine whether both components of gbm-match should be included#
+#m0: include gbm.match (a composite of pre-match and shift)#
+#m1: include only gbm shift#
+#m2: include only pre gbm match#
+#m3: include gbm shift and gbm prematch#
+#prepare a dataset with no missing data#
+fit.proxy = 'fitpc1'#
+dat = na.omit(d[,c(fit.proxy, 'gbm.shift', 'pre.gbm.match', 'gbm.match')])#
+#run the models#
+fm0 = lm(dat[,fit.proxy] ~ dat$gbm.match)#
+fm1 = lm(dat[,fit.proxy] ~ dat$gbm.shift)#
+fm2 = lm(dat[,fit.proxy] ~ dat$pre.gbm.match)#
+fm3 = lm(dat[,fit.proxy] ~ dat$gbm.shift + dat$pre.gbm.match)#
+#compare them using AIC#
+model.list = list(fm0, fm1, fm2, fm3)#
+model.names = c('fm0', 'fm1', 'fm2', 'fm3')#
+f.gbm.breakdown = f.compare(model.list, model.names)#
+f.gbm.breakdown
+source('scripts/general_functions.R')
+setwd("~/gitreps/reciprocal_transplant_methylation/scripts/bio_stats_course_final_project")
+source('scripts/general_functions.R')#
+source('scripts/frequentist_functions.R')
+#---------- SECTION 1:  load DAPC and physiological measures ----------##
+lnames = load("datasets/dapc_trait_data.Rdata")#
+lnames#
+head(d)#
+#
+#reduce to only the transplanted coral fragments#
+d=rbind(d[d$treat=='KO',], d[d$treat=='OK',])#
+#---------- SECTION 2: plot simple linear models for match-scores and physiological measures ----------##
+#Select which predictor variable to use#
+x='snp.match'#
+x='gbm.match'#
+x='ge.match'#
+#
+#plot linear models#
+quartz()#
+plot.subs=T#
+par(mfrow=c(2,3))#
+plot_acclim_fitness(d, 'GAIN', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'CARB', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'PROTEIN', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'LIPID', x, plot.subs=plot.subs)#
+# plot_acclim_fitness(d, 'ZOOX', x, plot.subs=plot.subs)#
+plot_acclim_fitness(d, 'fitpc1', x, plot.subs=plot.subs)#
+par(mfrow=c(1,1))#
+#---------- SECTION 3: compare predictive power of origin and gbm match ----------##
+#There is variation by origin (or transplant site) in the fitness proxies#
+#Test to make sure the gbm match score is the more important#
+#explanatory variable than origin for each proxy#
+par(mfrow=c(2,3))#
+for (fp in fit.proxies){#
+	boxplot(d[,fp]~d[,'treat'], ylab=fp)#
+}#
+#subset the dataset to remove any NA values for these variables#
+par(mfrow=c(1,1))#
+dat=na.omit(d[,c('fitpc1', 'gbm.match', 'orik')])#
+lm2=lm(fitpc1 ~ orik + gbm.match, data=dat)#
+summary(lm2)#
+plot_lm_coeffs(lm2)#
+#repeat above for all fitness proxies#
+quartz()#
+par(mfrow=c(2,3))#
+for (fp in fit.proxies){#
+	lmfp = lm(d[,fp] ~ d[,'orik'] + d[,'gbm.match'])#
+	print("------------------")#
+	print(fp)#
+	print(summary(lmfp))#
+	plot_lm_coeffs(lmfp, main=fp)#
+}#
+#
+#results are highly similar to Bayesian estimates#
+#---------- SECTION 4: compare predictive power of shift vs pre-match ----------##
+#The gbm match score can be subdivided into two components:#
+#the pre-match, defined as the match score for the transplanted fragments' clone-mate#
+#and the shift, defined as the distance along the disciminant axis the transplanted#
+#fragment moved away from its clone-mate toward the mean for the natives of the alternative site#
+#
+#pre-match likely captures genetic variation, but could also potentially serve as a readout#
+#of epigenetic modificaiton due to local-scale environmental variation between colonies#
+#
+#shift should capture the plastic response of gbm to transplantation#
+#Note that shift and pre-match are negatively associated, and that Orpheus corals shifted more#
+par(mfrow=c(1,1))#
+plot(gbm.shift~pre.gbm.match, data=d, pch=21, bg=get.cols(d$treat), cex=2)#
+legend('topright', c('KO', 'OK'), pt.bg=get.cols(c('KO', 'OK')), pch=21, cex=1)#
+#compare the explanatory power of pre-match and shift for each fitness proxy#
+quartz()#
+par(mfrow=c(2,3))#
+for (fp in fit.proxies){#
+	lmfp = lm(d[,fp] ~ d[,'pre.gbm.match'] + d[,'gbm.shift'])#
+	print("------------------")#
+	print(fp)#
+	print(summary(lmfp))#
+	plot_lm_coeffs(lmfp, main=fp)#
+}#
+#now use AIC to determine whether both components of gbm-match should be included#
+#m0: include gbm.match (a composite of pre-match and shift)#
+#m1: include only gbm shift#
+#m2: include only pre gbm match#
+#m3: include gbm shift and gbm prematch#
+#prepare a dataset with no missing data#
+fit.proxy = 'fitpc1'#
+dat = na.omit(d[,c(fit.proxy, 'gbm.shift', 'pre.gbm.match', 'gbm.match')])#
+#run the models#
+fm0 = lm(dat[,fit.proxy] ~ dat$gbm.match)#
+fm1 = lm(dat[,fit.proxy] ~ dat$gbm.shift)#
+fm2 = lm(dat[,fit.proxy] ~ dat$pre.gbm.match)#
+fm3 = lm(dat[,fit.proxy] ~ dat$gbm.shift + dat$pre.gbm.match)#
+#compare them using AIC#
+model.list = list(fm0, fm1, fm2, fm3)#
+model.names = c('fm0', 'fm1', 'fm2', 'fm3')#
+f.gbm.breakdown = f.compare(model.list, model.names)#
+f.gbm.breakdown
+f.gbm.breakdown = f.compare(model.list, model.names)
+f.gbm.breakdown
+barplot(f.gbm.breakdown[,'weight'])
+barplot(f.gbm.breakdown[,'weight'], beside=F)
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F)
+plot.new()
+?par
+par(mforw=c(5, 4, 4, 4) + 0.1)
+par(mar=c(5, 4, 4, 4) + 0.1)
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F)
+par(mar=c(5, 4, 4, 8) + 0.1)#
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F)
+?legend
+legend('topright', c('shift', 'pre', 'convergence', 'pre + shift'))
+par(mar=c(5, 4, 4, 2) + 0.1)
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F)
+plot.new()
+legend('topright', c('shift', 'pre', 'convergence', 'pre + shift'))
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'))
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=16)
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=17)
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=18)
+plot.new()#
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=18)
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=22, pt.bg=gray.colors(4))
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=22, pt.bg=gray.colors(4), pt.cex=2)
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F)
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=22, pt.bg=rev(gray.colors(4)), pt.cex=2)
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F)
+barplot(as.matrix(f.gbm.breakdown[,'weight']), beside=F, main="AIC weight")
+plot.new()#
+legend('center', c('shift', 'pre', 'convergence', 'pre + shift'), pch=22, pt.bg=rev(gray.colors(4)), pt.cex=2)
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)
+plot.subs=F
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)
+XLAB = 'Convergence'
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)

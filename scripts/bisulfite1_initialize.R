@@ -23,7 +23,10 @@ head(d)
 
 #remove lines with fewer than 50 reads
 sums=d$methReads + d$UnmethReads
+d0=d
 d=d[sums>50,]
+dim(d0)
+dim(d)
 
 #swap in the sample names for the bs ids
 sample = as.character(lapply(d$file, function(x) as.character(snames$sample[snames$bsName == x][1])))

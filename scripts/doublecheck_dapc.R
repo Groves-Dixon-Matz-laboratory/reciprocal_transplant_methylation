@@ -1,7 +1,7 @@
 #doublecheck_dapc.R
 #this script does the same things as DAPC_gbm_transplant.R
 #recoding it to make sure there are no bugs.
-
+#last updated 9-4-17
 
 
 #### SETUP ####
@@ -157,7 +157,7 @@ for (t in unique(traits$treat)){
 	abline(lms, col=sub$colors[1])
 }
 
-#get convergence scores
+#get similarity scores
 ntraits = traits[traits$Colony.ID %in% natives,]
 nmns = tapply(ntraits$gbm.ld1, INDEX=ntraits$treat, mean)
 abline(v= nmns)

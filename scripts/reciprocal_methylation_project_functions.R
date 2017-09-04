@@ -3,11 +3,12 @@
 #some global plotting variables
 MGP=c(2.1, .75, 0.0)
 color.set=c('blue', 'deepskyblue', 'darkgoldenrod1', 'firebrick1')
+CEX.AXIS=1.5
 # MGP=c(2.1,1,0)    #misha's
 
 
 volcano_plot = function(dat, pcol='pvalue', log2col='log2FoldChange', fdrcol='padj', cut=0.1, XLIM=NULL, YLIM=NULL, MAIN='', draw.box=T, LEGEND='FDR<0.1'){
-	plot(-log(dat[,pcol], 10)~dat[,log2col], cex=0.5, mgp=MGP, xlab=expression(paste("Log"[2], ' Fold Difference')), ylab=expression(paste('log'[10],'(p-value)')), axes=F, xlim=XLIM, ylim=YLIM, main=MAIN)
+	plot(-log(dat[,pcol], 10)~dat[,log2col], cex=0.5, mgp=MGP, xlab=expression(paste("Log"[2], ' Fold Difference Methylation')), ylab=expression(paste('log'[10],'(p-value)')), axes=F, xlim=XLIM, ylim=YLIM, main=MAIN)
 	axis(1, mgp=MGP);axis(2, )
 	if(draw.box){box()}
 	sub=dat[!is.na(dat[,fdrcol]),]
@@ -18,12 +19,8 @@ volcano_plot = function(dat, pcol='pvalue', log2col='log2FoldChange', fdrcol='pa
 
 
 
-df=x
-xcol='shift'
-index='treat'
-
 my_boxplot = function(df, xcol, index, YLAB='Match'){
-	b=boxplot(df[,xcol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='')
+	b=boxplot(df[,xcol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
 	colors =get.cols(df[,'treat'])
 	uni.treats = unique(df[,'treat'])
 	xs=df[,'treat']
@@ -32,38 +29,6 @@ my_boxplot = function(df, xcol, index, YLAB='Match'){
 	points(df[,xcol]~jitter(as.numeric(xs)), pch=21, bg=colors, cex=1.5)
 }
 
-
-
-# alpha = 0.075
-# PCH = 1
-# CEX = 1
-# LAS = 0
-# cex.lab = 1.5
-# cex.axis = 1.5
-# library(scales)
-# plot.lm = function(x, y, df, xlab, ylab, limits, xlim, ylim, point.color, print.line){
-	# z = cor.test(df[,x], df[,y], method = "spearman")
-	# print(z)
-	# rho = signif(z$estimate, digits = 2)
-	# p = z$p.value
-	# print(paste('spearman pvalue = ', p))
-	# if (limits == T){
-		# plot(df[,y] ~ df[,x], xlab = xlab, ylab = ylab, col = alpha(point.color, alpha), xlim = xlim, ylim = ylim, axes = F, cex.lab = cex.lab, pch = PCH, cex = CEX, las = LAS, mgp=MGP)
-		# # title(main = paste("rho = ", rho))
-		# # axis(1, at = signif(seq(from = xlim[1], to = xlim[2], by = -(xlim[1] - xlim[2])/3), digits = 2))
-		# axis(1, cex.axis = cex.axis, mgp=MGP)
-		# axis(2, at = signif(seq(from = ylim[1], to = ylim[2], by = (ylim[2] - ylim[1])/2), digits = 2), cex.axis = cex.axis, las = LAS, cex.lab = cex.lab, mgp=MGP)
-		# } else {
-		# plot(df[,y] ~ df[,x], xlab = xlab, ylab = ylab, col = alpha('grey', alpha), cex.lab = cex.lab, las = LAS, cex.axis = cex.axis, cex = CEX, mgp=MGP)
-		# # title(main = paste("rho = ", rho))
-		# }
- 	# lm1 = lm(df[,y] ~ df[,x])
- 	# print(summary(lm1))
- 	# if (print.line == T){
- 		# abline(lm1, col = 'red')
- 		# }
- 	# return(c(rho, p))
-# }
 
 emmix = function(x, means,sigma,lambda,k){
   mod <- normalmixEM(x, mu = means, sigma = sigma, lambda = lambda, k=k, arbvar=T)
@@ -84,8 +49,9 @@ plot_subset_mbd_histogram=function(subset, color, BREAKS=50){
 
 plot_subset_mbd_density=function(subset, color, YLIM=c(0, 0.2), MAIN = 'Density'){
 	sub=classes[classes$gene %in% subset,]
-	plot(density(sub$mbd.score), col=color, ylim = YLIM, main = MAIN)
-	lines(density(classes$mbd.score), xlab = 'Log2 Fold Difference')
+	plot(density(sub$mbd.score), col=color, ylim = YLIM, main = MAIN, lwd=1, xlab = 'MBD-score')
+	lines(density(classes$mbd.score), lwd=2)
+	lines(density(sub$mbd.score), col=color, lwd=2)
 }
 
 gg_color_hue <- function(n) {
@@ -488,36 +454,39 @@ merge_protein_names = function(dat, sort.col=F, DECREASING=F){
 
 #function to plot correlation between LD and a fitness proxy
 #this is run in the DAPC scripts
-plot_ld_fitness=function(traits, fit.proxy, ld.col, YLAB=fit.proxy, YLIM=NULL, legend.pos='topright'){
-	LWD=2
-	plot(traits[,fit.proxy]~traits[,ld.col], data=traits, ylab=YLAB, xlab="gbM Discriminant Function", mgp=MGP, ylim=YLIM)
+plot_ld_fitness=function(traits, fit.proxy, ld.col, YLAB=fit.proxy, YLIM=NULL, legend.pos='topright', plot.natives=T){
+	LWD=3
+	LTY=1
+	plot(traits[,fit.proxy]~traits[,ld.col], data=traits, ylab=YLAB, xlab="GBM Discriminant Function", mgp=MGP, ylim=YLIM)
 	#OO samples
-	clip(-1e8,1e8,-1e8,1e8)
-	d=traits[traits$ori=='O' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
-	CEX=1
-	points(d[,fit.proxy]~d[, ld.col], bg='red', pch=21, cex=CEX)  #OO samples
-	lmoo=lm(d[,fit.proxy]~d[, ld.col])
-	clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-	abline(lmoo, col = 'red', lty=2, lwd=LWD)
-	summary(lmoo)
-	clip(-1e8,1e8,-1e8,1e8)
-	#KK samples
-	d=traits[traits$ori=='K' & traits$tra=='K' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
-	points(d[,fit.proxy]~d[, ld.col], bg='blue', pch=21, cex=CEX)
-	lmkk=lm(d[,fit.proxy]~d[, ld.col])
-	clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-	abline(lmkk, col = 'blue', lty=2, lwd=LWD)
-	summary(lmkk)
-	clip(-1e8,1e8,-1e8,1e8)
-	legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)
-	head(traits)
+	if(plot.natives==TRUE){
+		clip(-1e8,1e8,-1e8,1e8)
+		d=traits[traits$ori=='O' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
+		CEX=1
+		points(d[,fit.proxy]~d[, ld.col], bg='red', pch=21, cex=CEX)  #OO samples
+		lmoo=lm(d[,fit.proxy]~d[, ld.col])
+		clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
+		# abline(lmoo, col = 'red', lty= LTY, lwd=LWD)
+		summary(lmoo)
+		clip(-1e8,1e8,-1e8,1e8)
+		#KK samples
+		d=traits[traits$ori=='K' & traits$tra=='K' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
+		points(d[,fit.proxy]~d[, ld.col], bg='blue', pch=21, cex=CEX)
+		lmkk=lm(d[,fit.proxy]~d[, ld.col])
+		clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
+		# abline(lmkk, col = 'blue', lty= LTY, lwd=LWD)
+		summary(lmkk)
+		clip(-1e8,1e8,-1e8,1e8)
+		legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)
+		head(traits)
+	}
 	#KO samples
-	CEX=2
+	CEX=1.5
 	d=traits[traits$ori=='K' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
 	points(d[,fit.proxy]~d[, ld.col], bg=color.set[2], pch=21, cex=CEX) #KO samples
 	lmko=lm(d[,fit.proxy]~d[, ld.col])
 	clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-	abline(lmko, col = color.set[2], lty=2, lwd=LWD)
+	abline(lmko, col = 'deepskyblue3', lty= LTY, lwd=LWD)
 	summary(lmko)
 	clip(-1e8,1e8,-1e8,1e8)
 	#OK samples
@@ -525,7 +494,7 @@ plot_ld_fitness=function(traits, fit.proxy, ld.col, YLAB=fit.proxy, YLIM=NULL, l
 	points(d[,fit.proxy]~d[, ld.col], bg=color.set[3], pch=21, cex=CEX)  #OK samples
 	lmok=lm(d[,fit.proxy]~d[, ld.col])
 	clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-	abline(lmok, col = color.set[3], lty=2, lwd=LWD)
+	abline(lmok, col = 'orange3', lty= LTY, lwd=LWD)
 	summary(lmok)
 	clip(-1e8,1e8,-1e8,1e8)
 	stat.list= list(summary(lmkk), summary(lmko), summary(lmok), summary(lmoo))
@@ -567,9 +536,11 @@ get_acclim=function(trans, home){
 
 
 
-plot_acclim_fitness = function(df, fit.proxy, nclim, plot.subs=F, XLAB='Match Score'){
+plot_acclim_fitness = function(df, fit.proxy, nclim, plot.subs=F, XLAB='Match Score', YLAB=fit.proxy){
+	LTY=1
 	colors=get.cols(df$treat)
-	plot(df[, fit.proxy]~df[, nclim], pch=21, bg=colors, col='black', cex=2, mgp=MGP, xlab=XLAB, ylab=fit.proxy)
+	plot(df[, fit.proxy]~df[, nclim], pch=21, bg=colors, col='black', cex=2, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
+	title(ylab=YLAB, line=3, cex.lab=CEX.AXIS)
 	
 	#plot regressions for subsets
 	if (plot.subs != F){
@@ -587,7 +558,7 @@ plot_acclim_fitness = function(df, fit.proxy, nclim, plot.subs=F, XLAB='Match Sc
 	#plot for combination
 	clip(x1=min(na.omit(df[, nclim])), max(na.omit(df[, nclim])), y1=min(na.omit(df[,fit.proxy])), 1e8)
 	lm1=lm(df[, fit.proxy]~df[, nclim])
-	abline(lm1, lwd=2, lty=2)
+	abline(lm1, lwd=2, lty=LTY)
 	p=round(summary(lm1)$coefficients[2,4], digits=3)
 	R2=round(summary(lm1)$r.squared, digits=2)
 	# title(main=paste('\n\np=', p))
@@ -785,7 +756,15 @@ plot_vanilla_pca = function(fit, XLIM=c(-1,1), YLIM=c(-1,1), CEX=1.5, invertX=1)
 	# points(c1a, c2a, bg=colors, cex=CEX, pch=21)
 }
 
-
+add_column_data = function(dfx, dfy, mergeCol, col2add){
+	x=merge(dfx, dfy, by = mergeCol, all.x=T)
+	if( sum(x[,mergeCol] == dfx[,mergeCol])==nrow(dfx) ){
+		print("Mering Successful, add this column to dfx")
+	}
+	else(
+	print("Error"))
+	return(x[,col2add])
+}
 
 
 

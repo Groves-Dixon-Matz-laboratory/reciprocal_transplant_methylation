@@ -72,8 +72,12 @@ dim(tdat)
 
 #----------- ORIGIN VOLCANO PLOT -----------#
 # volcano plot
-volcano_plot(data.frame(mg.traco), pcol='met_pvalue', log2col='met_log2FoldChange', fdrcol='met_padj', XLIM=c(-4,4), LEGEND='Sig. GBM FDR<0.1')
+volcano_plot(data.frame(mg.orico), pcol='met_pvalue', log2col='met_log2FoldChange', fdrcol='met_padj', XLIM=c(-4,4), LEGEND='Sig. GBM FDR<0.1')
 mtext('A', side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
+
+#plot density to go with it
+x=mg.orico$met_log2FoldChange
+plot(density(na.omit(x)), xlim=c(-4,4), axes=F, main='',xlab='');axis(1)
 
 #----------- PLOT CORRELATION BETWEEN ORIGIN DIFFERENCES IN METHYLATION AND TRANSCRIPTION -----------#
 
@@ -108,7 +112,7 @@ points(sig.meth$rna_log2FoldChange ~ sig.meth$met_log2FoldChange, col = 'black',
 lm1 = lm(sig.meth$rna_log2FoldChange ~ sig.meth$met_log2FoldChange)
 abline(lm1, col = 'red')
 summary(lm1)
-N=nrow(na.omit(sig.meth))
+N=nrow(na.omit(sig.meth[,c('rna_log2FoldChange', 'met_log2FoldChange')]))
 R2=paste(sprintf("%.3f", round(summary(lm1)$r.squared, 3)), "****",sep='')
 z = cor.test(sig.meth$rna_log2FoldChange, sig.meth$met_log2FoldChange, method="spearman")
 print(z)
@@ -119,6 +123,9 @@ text(x=text.x, y=text.y-.6, bquote("R"^2 ~ '=' ~ .(R2)), col='red')
 legend('topleft', 'Sig. GBM (p<0.01)', pt.bg='red', col='black', pch=21, pt.cex=1.2, box.lwd=0, inset=c(0, -.2), xpd=T)
 mtext('B', side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
 
+#build density plots
+plot(density(na.omit(odat$met_log2FoldChange)), main='', xlab='', xlim=XLIM, axes=F, col='black');axis(1)
+lines(density(na.omit(sig.meth$met_log2FoldChange)), col='red')
 
 
 ###subset for genes that show significant variation in transcription
@@ -154,7 +161,7 @@ points(sig.both$rna_log2FoldChange ~ sig.both$met_log2FoldChange, col = 'black',
 abline(lm(sig.both$rna_log2FoldChange ~ sig.both$met_log2FoldChange), col = 'purple')
 lm2=lm(sig.both$rna_log2FoldChange ~ sig.both$met_log2FoldChange)
 summary(lm2)
-N=nrow(na.omit(sig.both))
+N=nrow(na.omit(sig.both[,c('rna_log2FoldChange', 'met_log2FoldChange')]))
 R2=paste(sprintf("%.3f", round(summary(lm2)$r.squared, 3)), "****",sep='')
 rsymbol=expression("R"^2)
 z = cor.test(sig.both$rna_log2FoldChange, sig.both$met_log2FoldChange, method = "spearman")
@@ -168,6 +175,13 @@ mtext('C', side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
 summary(lm1)
 # summary(lmrna)
 summary(lm2)
+
+
+
+#build density plots
+plot(density(na.omit(odat$met_log2FoldChange)), main='', xlab='', xlim=XLIM, axes=F, col='black');axis(1)
+lines(density(na.omit(sig.both$met_log2FoldChange)), col='purple')
+
 
 #----------- CHECK IF COUNTS OF SIGNIFICANT GBM GENES CORRELATES WITH SIG GE COUNTS -----------#
 #use fisher's exact test to test if being significant for GBM increases probablity of significance for GE

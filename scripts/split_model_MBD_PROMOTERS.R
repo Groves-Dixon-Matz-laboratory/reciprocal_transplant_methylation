@@ -140,12 +140,90 @@ okatk.r=results(okatkd, contrast = c('origin', 'O', 'K'))
 summary(okatk.r)
 
 
-save(okatk.r,okato.r,k2o.r,o2k.r,home.r,file="datasets/splitModels_MBD_PROMOTER.RData")
+
+#save the results
+# save(okatk.r,okato.r,k2o.r,o2k.r,home.r,file="datasets/splitModels_MBD_PROMOTER.RData")
 
 
 
 
 
+#--------------------- correlate with expression ---------------------#
+### tagseq transplant results ###
+lnames=load("datasets/splitModels_GE.RData")
+lnames
+colnames(k2o.r) = paste('rna', colnames(k2o.r), sep = "_")
+colnames(o2k.r) = paste('rna', colnames(o2k.r), sep = "_")
+rna.k2o.r = k2o.r
+rna.o2k.r = o2k.r
+head(rna.k2o.r) #effect of transplantation site on corals from Keppel (rna)
+head(rna.o2k.r) #effect of transplantation site on corals from Orpheus (rna)
+
+### prep mbdseq results ###
+directory<-"~/gitreps/reciprocal_transplant_methylation"
+setwd(directory)
+lnames = load("datasets/splitModels_MBD_PROMOTER.RData")
+#note log2 fold change is transplant O vs K
+colnames(k2o.r) = paste('met', colnames(k2o.r), sep = "_")
+colnames(o2k.r) = paste('met', colnames(o2k.r), sep = "_")
+gbm.k2o.r = k2o.r
+gbm.o2k.r = o2k.r
+head(gbm.k2o.r) #effect of transplantation site on corals from Keppel
+head(gbm.o2k.r) #effect of transplantation site on corals from Orpheus
+
+#----------- MERGE SPLIT MBD-SEQ AND TAG-SEQ DATA -----------#
+
+### for corals from Keppel ###
+x=data.frame(gbm.k2o.r)
+y=data.frame(rna.k2o.r)
+tdat.k = merge(x,y, by = 0)
+head(tdat.k)
+dim(tdat.k)
+
+### for corals at Orpheus ###
+x=data.frame(gbm.o2k.r)
+y=data.frame(rna.o2k.r)
+tdat.o = merge(x,y, by = 0)
+head(tdat.o)
+dim(tdat.o)
+
+
+#----------- PLOT THE CORRELATIONS FOR SPLIT MODELS -----------#
+
+#choose plotting variables
+CUT=0.05
+P.TYPE='pvalue'
+alpha = 0.2
+XLIM=c(-2,2)
+YLIM=c(-1.5,1.5)
+text.x = 1.1
+text.y=1.2
+greys = grey.colors(2)
+par(mfrow=c(2,2))
+par(mar=c(5, 6, 4, 2) + 0.1)
+
+### set odat to either split model to plot ###
+odat=tdat.k;YLAB='(KO - KK)';redP='&'; purpleP="*";letter1="A";letter2="B"
+odat=tdat.o; YLAB='(OO - OK)';redP="**"; purpleP="&";letter1="C";letter2="D"
+
+
+# ############ OPTIONALLY SEPARATE BY MBD-SCORE CLASS ####################
+###this did not turn up anything interesting
+# lnames = load('datasets/mbd_classes_p-1000_200.Rdata')
+# strong=classes[classes$mbd.class==2,'gene']
+# weak=classes[classes$mbd.class==1,'gene']
+# odat2=odat
+# rownames(odat2) = odat2$Row.names
+
+# #pick which to plot
+# #strong
+# odat=odat2[rownames(odat2) %in% strong,]
+# dim(odat)
+
+# #weak
+# odat=odat2[rownames(odat2) %in% weak,]
+# dim(odat)
+# ####################################
 
 #build plot for full dataset comparisons (all KK+KO samples vs all OO+OK samples)
 plot(odat$rna_log2FoldChange ~ odat$met_log2FoldChange, col = alpha('black', alpha), xlim = XLIM, ylim = YLIM, xlab='', ylab='', axes = F, main='')
@@ -159,7 +237,7 @@ lm.all = lm(odat$rna_log2FoldChange ~ odat$met_log2FoldChange)
 summary(lm.all)
 
 #subset for genes that show significant variation
-sig.meth = odat[odat[,paste('rna', P.TYPE, sep="_")] < CUT,]
+sig.meth = odat[odat[,paste('met', P.TYPE, sep="_")] < CUT,]
 dim(sig.meth)
 
 #overlay points for subset
@@ -179,7 +257,7 @@ p = z$p.value
 P=sprintf("%.4f", round(summary(lm1)$coefficients[2,4], digits=4))
 mtext(letter1, side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
 
-if (redP == "n/s"){
+if (redP == "&"){
 	text(x=text.x, y=text.y, bquote(atop('n=' * .(N), "R"^2 * '=' * .(R2) * ''^.(redP) )), col='red')
 } else {
 	text(x=text.x, y=text.y, bquote(atop('n=' * .(N), "R"^2 * '=' * .(R2) * ''*.(redP) )), col='red')
@@ -193,7 +271,7 @@ title(xlab=YLAB, line=3.5)
 title(ylab=expression(paste("Log"[2], " Difference Transcription")), line=3)
 title(ylab=YLAB, line=4.5)
 abline(h=0, v=0, lty=2, col='grey')
-sig.both = sig.meth[sig.meth[,paste('met', P.TYPE, sep="_")] < CUT,]
+sig.both = sig.meth[sig.meth[,paste('rna', P.TYPE, sep="_")] < CUT,]
 points(sig.both$rna_log2FoldChange ~ sig.both$met_log2FoldChange, col = 'black', pch = 21, cex = 1, bg='purple')
 abline(lm(sig.both$rna_log2FoldChange ~ sig.both$met_log2FoldChange), col = 'purple')
 lm2=lm(sig.both$rna_log2FoldChange ~ sig.both$met_log2FoldChange)
@@ -207,15 +285,15 @@ rro = z$estimate
 p = z$p.value
 P=sprintf("%.4f", round(summary(lm2)$coefficients[2,4], digits=4))
 mtext(letter2, side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
+if (purpleP == "&"){
+	text(x=text.x, y=text.y, bquote(atop('n=' ~ .(N), "R"^2 * '=' * .(R2) * ""^.(purpleP))), col='purple')
+} else {
+	text(x=text.x, y=text.y, bquote(atop('n=' ~ .(N), "R"^2 * '=' * .(R2) * ""*.(purpleP))), col='purple')
+}
 
-text(x=text.x, y=text.y, bquote(atop('n=' ~ .(N), "R"^2 * '=' * .(R2) * ""^.(purpleP))), col='purple')
+
 summary(lm1)
+summary(lm2)
 
-
-
-
-
-
-
-
-
+#Do fisher test
+so = sig_overlap(odat, 'met_pvalue', 'rna_pvalue', 0.05, 'met_pvalue')

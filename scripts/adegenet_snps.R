@@ -1,15 +1,18 @@
 #adegenet_snps.R
 #run discriminate analysis of principal components on SNP data
 #Groves Dixon
-#last updated 5-1-17
+#last updated 8-28-17
+#updated to use SNPs called with A.digitifera reference and mpileup
 
-setwd("~/git_Repositories/reciprocal_transplant_methylation/")
+setwd("~/gitreps/reciprocal_transplant_methylation/")
 library(vcfR)
 library(adegenet)
 
 
 #upload the vcf
-gll=vcfR2genlight(read.vcfR("datasets/recip_snps_4-28-17_noSingletons.recode.vcf"))
+# gll=vcfR2genlight(read.vcfR("datasets/recip_snps_4-28-17_noSingletons.recode.vcf"))#old one generated with GATK and A.mil reference. 
+# gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp20_maxMiss95.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
+gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp5_maxMiss8.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
 class(gll)
 
 
@@ -20,7 +23,7 @@ gi=as.genind(x)
 
 
 #plot the SNP index
-plot(gll)
+# plot(gll)  #this takes a long time
 
 
 #assign populations
@@ -53,6 +56,7 @@ scatter(dp,bg="white",scree.da=FALSE,legend=TRUE,solid=.4)
 
 #plot my way
 #plot with vanilla
+library(scales)
 a=data.frame(dp$ind.coord)
 a$pop=pop
 ldens=tapply(a$LD1, a$pop, density)
@@ -72,7 +76,8 @@ for (i in 1:length(ldens)) {
 	                  rep(0, length(ldens[[i]]$x))), col = alpha(color.set[i], 0.6), 
 	                  lwd = 1, border = color.set[i])
 }
-
+mns = tapply(a$LD1, a$pop, mean)
+abline(v=mns)
 snp.dp=dp
 save(snp.dp, file='datasets/snp.dapc.Rdata')
 

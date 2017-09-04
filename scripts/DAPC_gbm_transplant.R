@@ -1,7 +1,7 @@
 #DAPC_gbm_transplant.R
 #run discriminate analysis of principal components on MBD-seq data
 #Groves Dixon
-#last updated 5-1-17
+#last updated 8-28-17
 
 #### SETUP ####
 library(adegenet)
@@ -18,11 +18,11 @@ head(o2k.r)
 
 
 lnames=load("mbd_3_and_6mo.RData")
-vsd.6mo=vsd[,grep("_3m", colnames(vsd))]
+# vsd.6mo=vsd[,grep("_3m", colnames(vsd))]
 vsd.3mo=vsd[,grep("_2m", colnames(vsd))]
-head(vsd.6mo)
+# head(vsd.6mo)
 head(vsd.3mo)
-dim(vsd.6mo)
+# dim(vsd.6mo)
 dim(vsd.3mo)
 
 
@@ -35,18 +35,6 @@ volcano_plot(o2k.r, XLIM=c(-1.5, 1.5), YLIM=YLIM, MAIN='OO vs OK', draw.box=F) #
 par(mfrow=c(1,1))
 
 ######## SUBSET FOR GENES SHOWING EVIDENCE OF METHYLATION PLASTICITY ########
-#get count for FDR passing genes
-# CUT=.1
-# x=k2o.r[!is.na(k2o.r$padj),]
-# y=o2k.r[!is.na(o2k.r$padj),]
-# sig.genes1 = rownames(x)[abs(x$padj)<CUT];length(sig.genes1) #sig for KK vs KO
-# sig.genes2 = rownames(y)[abs(y$padj)<CUT];length(sig.genes2) #sig for OO vs OK
-# sig.genes = append(sig.genes1, sig.genes2)
-# sig.genes=unique(sig.genes)
-# sig.genes=sig.genes[!is.na(sig.genes)]
-# head(sig.genes)
-# length(sig.genes)
-
 
 #assign plastic genes
 CUT=0.01
@@ -57,20 +45,33 @@ sig.genes=sig.genes[!is.na(sig.genes)]
 length(sig.genes)
 
 
-#optionally uncomment to use all genes instead of plastic genes
+#optionally uncomment the line below to use all genes instead of plastic genes
 # sig.genes=rownames(vsd)
 
 #subset the variance stabilized counts
 vsds=vsd[sig.genes,]
 coo=conditions
 degs10<-rownames(vsds)
-vsds.6mo=vsds[,grep("_3m", colnames(vsd))]
-vsds=vsds[,grep("_2m", colnames(vsd))]
+# vsds.6mo=vsds[,grep("_3m", colnames(vsd))]
+# vsds=vsds[,grep("_2m", colnames(vsd))]
 #560 genes with gbM plasticity
-head(vsds.6mo)
+# head(vsds.6mo)
 head(vsds)
-dim(vsds.6mo)
+# dim(vsds.6mo)
 dim(vsds)
+
+######## SHOW WHAT TYPE OF GENES SHOW GBM ########
+sig.genes1.o = rownames(okatk.r)[okatk.r$pvalue<CUT];length(sig.genes1)
+sig.genes2.o = rownames(okato.r)[okato.r$pvalue<CUT];length(sig.genes2) ##increa
+sig.genes.o = unique(append(sig.genes1.o, sig.genes2.o))
+sig.genes.o=sig.genes.o[!is.na(sig.genes.o)]
+length(sig.genes.o)
+
+par(mfrow=c(1,2))
+plot_subset_mbd_density(sig.genes,'red', YLIM=c(0, 0.3), MAIN = 'Site-specific\nn=560')
+legend('topright', c('All genes', 'Site-specific'), col=c('black', 'red'), lwd=2)
+plot_subset_mbd_density(sig.genes.o,'red', YLIM=c(0, 0.3), MAIN = 'Origin-specific\nn=316')
+legend('topright', c('All genes', 'Origin-specific'), col=c('black', 'red'), lwd=2)
 
 
 ######## OUTPUT THE SUBSET OF GENES FOR GO ENRICHMENT ########
@@ -94,18 +95,9 @@ dim(vsds)
 ######## SET SPLIT DATASTS FOR NATIVE CORALS AND TRANSPLANTED CORALS ########
 a.vsd<-vsds[,c(grep("OO",colnames(vsds)), grep("KK",colnames(vsds)))]     #'home' corals. Will disciminate between these two
 a.vsd.supp<-vsds[,c(grep("OK",colnames(vsds)),grep("KO",colnames(vsds)))] #transplanted corals
+head(a.vsd)
+head(a.vsd.supp)
 
-
-#Some genes have insufficient variance for DFA in data subsets!...find those genes using loop below
-dframe=(a.vsd[degs10,])
-for(col in rownames(dframe))
-	{  min=min(dframe[col,])
-		max=max(dframe[col,])
-		if(min == max){print(col)}
-		}
-
-#If print out above, copy gene names below and run line to remove genes from analysis. 
-#degs9=degs10[! degs10 %in% c("isogroup27486")]
 
 
 ######## PREPARE DATA FOR DAPC ########
@@ -117,15 +109,14 @@ screeplot(pcp,bstick=T) # only 1st PC is non-random when using diff exp genes on
 clus=find.clusters(t(a.vsd[degs10,]),max.n.clus=15, n.clust=2, n.pca=4) #[degs10,]
 
 
-#Use clus$grp to rename to in2in and off2off -
-#Host
+#Use clus$grp to rename
 colnames(a.vsd) 
 clus$grp=c(substr(colnames(a.vsd), start=1,stop=2)) #set the transplantation site as the groups
 
 
 
 ######## BUILD DISCIMINATE FUNCTION ########
-dp=dapc(t(a.vsd[degs10,]),clus$grp, n.da=1, perc.pca=80) 
+dp=dapc(t(a.vsd[degs10,]),clus$grp, n.da=1, perc.pca=80)
 #discriminate between KK and OO
 #keep 1 discriminate function
 #use PCs to account for 80% of var
@@ -156,12 +147,20 @@ quartz()
 scatter(test,bg="white",scree.da=FALSE,legend=TRUE,solid=.4,ylim=c(0,0.6),xlim=c(-4,4)) 
 #adjust axes to correspond to previous graph, then overlay plots in photoshop
 
+
+
 #apply the disciminate function to all datasets at once
-pred.sup<-predict.dapc(dp,newdata=(t(vsds[degs10,])), var.contrib=T) 
+pred.sup<-predict.dapc(dp,newdata=(t(vsds[degs10,])), var.contrib=T)
 gbm.dapc=data.frame(pred.sup$ind.scores)
 gbm.dapc$treat=substr(rownames(gbm.dapc), start=1, stop=2)
 rownames(gbm.dapc) = sub("_2m", "", rownames(gbm.dapc)) #remove '_2m' from rownames
 mns=tapply(gbm.dapc$LD1, gbm.dapc$treat, mean)
+
+
+#look at results
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
+plot.mns=F
+personalized_ghosts(gbm.dapc, plot.mns=plot.mns) #for gbm
 
 
 
@@ -169,6 +168,8 @@ mns=tapply(gbm.dapc$LD1, gbm.dapc$treat, mean)
 #upload DAPC results from SNPs and Tag-seq
 lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.Rdata') #output from adegenet_snps.R
 snp.dapc=data.frame(snp.dp$ind.coord)
+rns = sub(".fastq_Sorted.bam", "", rownames(snp.dapc))
+rownames(snp.dapc) = rns
 snp.dapc$treat=substr(rownames(snp.dapc), start=1, stop=1)
 lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc.Rdata') #output from DAPC_tagseq_transplant.R (use this one for plastic genes)
 # # lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc_all_genes.Rdata') #output from DAPC_tagseq_transplant.R (This one includes all genes)
@@ -179,12 +180,6 @@ traits$treat=paste(traits$ori, traits$tra, sep='')
 traits$geno=paste(traits$ori, traits$num, sep='')
 head(traits)
 
-
-#ADD MORTIALITY DATA
-mort=read.csv("datasets/mortality_data.csv")
-x=merge(traits, mort, by = 'Colony.ID', all.x=T)
-sum(x$Colony.ID==traits$Colony.ID) == nrow(traits)
-traits$mort=x$mortality
 
 
 #REMOVE SINGLE WEIRD LIPID MEASURE
@@ -206,10 +201,15 @@ source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylati
 traits$gbm.ld1=order_ld(gbm.dapc)
 traits$ge.ld1=order_ld(ge.dapc)
 
+#traits dataframe now has DAPC results from SNPs, GBM, and transcription data
+print(traits)
 
 
 
 ############# GET FITNESS FIRST PC #############
+#run principal component analysis on four fitness traits
+#that have sufficient number of samples represented.
+#This will serve as a summary fitness index
 head(traits)
 fit=traits[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')]
 rownames(fit) = traits$Colony.ID
@@ -226,6 +226,7 @@ sum(x$Colony.ID==traits$Colony.ID) == nrow(traits)
 traits$fitpc1=x$fitpc1*-1
 
 #plot with ggbiplot
+library(ggbiplot)
 g <- ggbiplot(fitpc, choices = 1:2, obs.scale = 1, var.scale = 1, ellipse = T, varname.size = 4)
 colors=get.cols(substr(rownames(fitpc$x), start=1, stop=2))
 g <- g + geom_point(color=colors, size=3)
@@ -245,9 +246,10 @@ personalized_ghosts(ge.dapc, plot.mns=plot.mns)  #for ge
 
 ################## SAVE/LOAD ##################
 setwd("~/gitreps/reciprocal_transplant_methylation/")
-# #save/load for plastic genes
-# save.image("datasets/DAPC_plastic_gbm2.Rdata")
-load("datasets/DAPC_plastic_gbm2.Rdata")
+
+##save.image("datasets/DAPC_plastic_gbm3.Rdata") #DAPC_plastic_gbm3.Rdata is the final version as of BioRchiv submission. Includes SNP data from A.dig reference using mpileup filename=recipMeth_final_mindp5_maxMiss8.recode.vcf
+
+# load("datasets/DAPC_plastic_gbm3.Rdata")
 source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
 
 
@@ -259,19 +261,19 @@ ld.col='gbm.ld1'
 ld.col='ge.ld1'
 ld.col='snp.ld1'
 
+# t.traits=rbind(traits[traits$treat=='KO',], traits[traits$treat=='OK',])
+
 #plot correlations with fitness proxies
 par(mfrow=c(2,3))
 plot_ld_fitness(traits, 'GAIN', ld.col= ld.col)
-plot_ld_fitness(traits, 'LIPID', ld.col= ld.col) #YLIM=c(0,0.3)
+plot_ld_fitness(traits, 'LIPID', ld.col= ld.col)
 plot_ld_fitness(traits, 'PROTEIN', ld.col= ld.col)
 plot_ld_fitness(traits, 'CARB', ld.col= ld.col)
 plot_ld_fitness(traits, 'ZOOX', ld.col= ld.col)
-plot_ld_fitness(traits, 'fitpc1', ld.col= ld.col)
 
-fit.proxy='fitpc1'
-ld.col='gbm.ld1'
 
-#GATHER ACCLIMITIZATION DATA FOR SNP DATA
+
+#GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR SNP DATA
 #(the inverse difference in dapc coordinate for transplants and
 # the mean for home corals from the site they were transplanted to)
 x= get_ld_diffs(traits, ld.col='snp.ld1', geno1='OO', geno2='KO')
@@ -280,7 +282,7 @@ clim.snp=rbind(x,y)
 clim.snp$z=zscore(clim.snp$acclim)*-1
 
 
-#GATHER ACCLIMITIZATION DATA FOR GBM DATA
+#GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR GBM DATA
 #(the inverse difference in dapc coordinate for transplants and
 # the mean for home corals from the site they were transplanted to)
 x= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='OO', geno2='KO')
@@ -290,7 +292,7 @@ clim.gbm$z=zscore(clim.gbm$acclim)*-1
 
 
 
-#GATHER ACCLIMITIZATION DATA FOR GE DATA
+#GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR GE DATA
 #(the inverse difference in dapc coordinate for transplants and
 # the mean for home corals from the site they were transplanted to)
 x= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KO')
@@ -299,7 +301,7 @@ clim.ge=rbind(x,y)
 clim.ge$z=zscore(clim.ge$acclim)*-1
 
 
-#GATHER PRE-ACCLIMITIZATION DATA FOR GBM DATA
+#GATHER PRE-ACCLIMITIZATION ("PRE-SIMILARITY") DATA FOR GBM DATA
 #here look at how close the clone pair was to the alternative home mean
 #this will help address whether already being closer to target methylome
 #correlates with fitness proxies, or 
@@ -319,6 +321,28 @@ pok$z=zscore(pok$acclim)*-1
 pre.clim=rbind(pko, pok)
 
 
+#GATHER PRE-ACCLIMITIZATION DATA FOR GE DATA
+#here look at how close the clone pair was to the alternative home mean
+#this will help address whether already being closer to target methylome
+#correlates with fitness proxies, or 
+#for KO samples
+preko= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KK')
+preko = preko[,c('geno', 'acclim')]
+ko=traits[traits$treat=='KO',]
+pko=merge(preko,ko, by = 'geno', all.x=T, all.y=F)
+pko$z=zscore(pko$acclim)*-1
+
+#for OK samples
+preok= get_ld_diffs(traits, ld.col='ge.ld1', geno1='KK', geno2='OO')
+preok = preok[,c('geno', 'acclim')]
+ok=traits[traits$treat=='OK',]
+pok=merge(preok,ok, by = 'geno', all.x=T, all.y=F)
+pok$z=zscore(pok$acclim)*-1
+pre.clim.ge=rbind(pko, pok)
+
+
+
+
 
 #CORRELATE ACCLIMIZATION MEASURES FOR GBM AND TRANSCRIPTION
 mclim=merge(clim.gbm, clim.ge, by = 'Colony.ID', all.x=F, all.y=F)
@@ -335,12 +359,13 @@ summary(lm1)
 abline(lm1)
 
 
-#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA
+#CORRELATE ACCLIMIZATION MEASURES FOR GE AND SNP DATA
 mclim=merge(clim.ge, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)
 plot(mclim$z.x~mclim$z.y)
 lm1=lm(mclim$z.x~mclim$z.y)
 summary(lm1)
 abline(lm1)
+
 
 
 
@@ -354,21 +379,21 @@ clim.df=pre.clim
 
 
 #plot
-XLAB = 'Match Score'
-XLAB = 'Prematch'
-XLAB = 'SNP Match'
-XLAB = 'GE match'
+XLAB = 'GBM Similarity'
+XLAB = 'GBM Pre-similarity'
+XLAB = 'SNP Similarity'
+XLAB = 'GE Similarity'
 quartz()
 plot.subs=F
 par(mfrow=c(1,1))
 my_boxplot(clim.df, 'z', index='treat', YLAB=XLAB)
 par(mfrow=c(2,3))
-plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB)
-plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB)
-plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB)
-plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB)
-plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB)
-plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB)
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)')
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)")
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)" )
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
 par(mfrow=c(1,1))
 #plot legend
 plot.new(); legend('center', c('KO','OK'), pt.bg=c(color.set[2], color.set[3]), pch=21, pt.cex=1.5, inset=c(0,-.3), xpd=T)
@@ -449,6 +474,24 @@ legend('topleft', c('K','O'), pt.bg=c(color.set[1], color.set[4]), pch=21, pt.ce
 ############ GET SHIFT VALUES ############
 shift.gbm = get_shift(gbm.dapc)
 shift.ge = get_shift(ge.dapc)
+shift.gbm$Colony.ID = paste(shift.gbm$treat.y, substr(shift.gbm$geno, start=2, stop=6), sep='')
+shift.ge$Colony.ID = paste(shift.ge$treat.y, substr(shift.ge$geno, start=2, stop=6), sep='')
+
+
+
+#------- ASSEMBLE FULL TRAIT TABLE WITH DAPC RESULTS -------#
+#add similarity
+traits$gbm.conv = add_column_data(traits, clim.gbm, 'Colony.ID', 'match_score')
+traits$ge.conv = add_column_data(traits, clim.ge, 'Colony.ID', 'z') 
+traits$snp.conv = add_column_data(traits, clim.snp, 'Colony.ID', 'z') 
+traits$gbm.pre = add_column_data(traits, pre.clim, 'Colony.ID', 'z') 
+traits$ge.pre = add_column_data(traits, pre.clim.ge, 'Colony.ID', 'z') 
+traits$gbm.shift = add_column_data(traits, shift.gbm, 'Colony.ID', 'shift') 
+traits$ge.shift = add_column_data(traits, shift.ge, 'Colony.ID', 'shift')
+traits$geno<-NULL 
+save(traits, file="~/Desktop/full_traits_table.Rdata")
+head(traits)
+
 
 
 #CORRELATE SHIFT WITH PREACCLIMATION
@@ -458,8 +501,12 @@ plot(x$shift~x$z, pch=21, bg=get.cols(x$treat.y), cex=2, xlab='Pre-Acclimation',
 
 #CORRELATE PREACCLIMATION WITH SNP SIMILARITY
 x=merge(clim.snp, pre.clim, by='geno', all.x=T)
-plot(x$z.y~x$z.x, pch=21, bg=get.cols(x$treat.y), cex=2, xlab='SNP similarity', ylab='Pre-convergence (GBM)', main = '');lmx=lm(x$z.y~x$z.x);summary(lmx);abline(lmx, lty=2, lwd=2)
+plot(x$z.y~x$z.x, pch=21, bg=get.cols(x$treat.y), cex=2, xlab='SNP Similarity', ylab='GBM Pre-Similarity', main = '')
+
+lmx=lm(x$z.y~x$z.x);summary(lmx)
+abline(lmx, lty=1, lwd=2)
 text(x=-1.2, y=2, bquote('R'^'2'*'=0.266*'))
+legend('right', c('KO','OK'), pt.bg=c(color.set[2], color.set[3]), pch=21, pt.cex=1.5, inset=c(0,-.1), xpd=T)
 
 
 
@@ -843,6 +890,7 @@ datTraits=datTraits[!remove.samples,]
 
 #file
 save(datExpr, datTraits, file="symSamplesAndTraits1174signed_NOii3_Feb2016.RData") #OR hostSamplesAndTraits7008signed_NOoi11_Feb2016.RData
+
 
 ################Moving on!  Network construction and module detection
 
