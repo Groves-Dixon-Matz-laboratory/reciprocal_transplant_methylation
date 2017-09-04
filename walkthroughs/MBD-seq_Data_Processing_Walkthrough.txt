@@ -177,8 +177,7 @@ sbatch removeDups.slurm
 
 
 #GATHER THE REMOVAL METRIC DATA
->metRemovalMetrics.tsv;for file in *m.trimSorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8)
- echo -e "$file\t$pct" >> >metRemovalMetrics.tsv; done
+>metRemovalMetrics.tsv;for file in *m_reduced*dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8); echo -e "$file\t$pct" >> metRemovalMetrics.tsv; done
  
 >ubRemovalMetrics.tsv;for file in *ub.trimSorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8)
  echo -e "$file\t$pct" >> ubRemovalMetrics.tsv ; done
@@ -226,7 +225,7 @@ mkdir promoter_counts
 cd promoter_counts
 ln -s ../*final.sam .
 >promoterCounts; for file in $(ls *final.sam); do echo "htseq-count\
- -f sam -t gene -m intersection-nonempty -i gene $file adig_promoters_buffrd300.gff > ${file/_final.sam/_promoter_counts.gff}"\
+ -f sam -t gene -m intersection-nonempty --stranded=no -i gene $file adig_promoters_buffrd300.gff > ${file/_final.sam/_promoter_counts.gff}"\
  >> promoterCounts; done
 
 launcher_creator.py -n promoterCounts -j promoterCounts -q normal -t 5:00:00 -a $allo -e $email -N 2 -w 48
