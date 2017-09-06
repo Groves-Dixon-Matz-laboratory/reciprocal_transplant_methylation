@@ -17,11 +17,16 @@
 # First, press command-D on mac or ctrl-shift-H in Rstudio and navigate to the directory containing scripts and input files. Then edit, mark and execute the following bits of code, one after another.
 setwd("~/git_Repositories/reciprocal_transplant_methylation/go_mwu")
 
-# Edit these to match your data file names: 
+# Edit these to match your data file names:
+#choose input: 
 input="origin_gbm_go_mwu_input.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+input=
+
+
+
 goAnnotations="adig_go_final.tsv" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
 goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
-goDivision="CC" # either MF, or BP, or CC
+goDivision="MF" # either MF, or BP, or CC
 source("gomwu.functions.R")
 
 
@@ -42,9 +47,9 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
 quartz()
 gomwuPlot(input,goAnnotations,goDivision,
 	absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
-	level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-	level2=0.05, # FDR cutoff to print in regular (not italic) font.
-	level3=0.01, # FDR cutoff to print in large bold font.
+	level1=0.5, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+	level2=0.3, # FDR cutoff to print in regular (not italic) font.
+	level3=0.2, # FDR cutoff to print in large bold font.
 	txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
 	treeHeight=0.5, # height of the hierarchical clustering tree
 #	colors=c("dodgerblue2","firebrick1","skyblue","lightcoral") # these are default colors, un-remar and change if needed
@@ -59,4 +64,5 @@ gomwuPlot(input,goAnnotations,goDivision,
 resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
 res=read.table(resName, header = T)
 res=res[order(res$pval),]
-head(res, n=20)
+head(res, n=30)
+tail(res)

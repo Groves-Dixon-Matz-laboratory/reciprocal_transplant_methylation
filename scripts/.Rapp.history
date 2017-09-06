@@ -1,0 +1,83 @@
+#set up plotting variables#
+meth.sd = 0.01 #noise level in methylation#
+n1 = 1000    #length of phase 1#
+n2 = 3*n1    #
+transx = n1:(n1 + n1/5)#
+#
+transcription.col = 'grey'#
+meth.col = 'black'#
+#-------- method 1#
+low.mn = 1#
+hi.mn = 2#
+sd0=0.4#
+sd1=0.1#
+sdm=0.001#
+xs=1:200#
+step=length(xs)/4#
+#set up time values#
+x1=seq(1, step)#
+x2=seq(step+1, step*2)#
+x3=seq(step*2+1, step*3)#
+x4=seq(step*3+1, step*4)#
+#
+#set up expression values#
+e1 = rnorm(x1, mean=low.mn, sd = sd0)#
+e2 = rnorm(x2, mean=seq(low.mn, hi.mn, length.out=c(length(x2))), sd=sd0)#
+e3 = rnorm(x3, mean=hi.mn, sd=seq(from=sd0, to=sd1, length.out=length(x3)))#
+e4 = rnorm(x4, mean=hi.mn, sd=sd1)#
+#
+#set up methylation values#
+m1 = rnorm(x1, mean=low.mn, sd = sdm)#
+m2 = rnorm(x2, mean=seq(low.mn, hi.mn, length.out=c(length(x2))), sd=sdm)#
+m3 = rnorm(x3, mean=hi.mn, sd=sdm)#
+m4 = rnorm(x4, mean=hi.mn, sd=sdm)#
+#
+#consolidate#
+alle=c(e1, e2, e3, e4)#
+allm=c(m1, m2, m3, m4)#
+allx=c(x1,x2, x3, x4)#
+loessm = predict(loess(allm~allx, span=0.1), allx)#
+#
+#plot#
+plot(alle~allx, pch=26, axes=F, mpg=)#
+lines(loessm~allx, lwd=2, col= meth.col)#
+lines(alle~allx, lwd=2, col= transcription.col)#
+#
+#-------- method 2#
+low.mn = 1#
+hi.mn = 1.75#
+sd0=0.4#
+sd1=0.08#
+sdm=0.001#
+xs=1:200#
+step=length(xs)/4#
+#set up time values#
+x1=seq(1, step)#
+x2=seq(step+1, step*2)#
+x3=seq(step*2+1, step*3)#
+x4=seq(step*3+1, step*4)#
+#
+#set up expression values#
+e1 = rnorm(x1, mean=low.mn, sd = sd0)#
+e2 = rnorm(x2, mean=hi.mn, sd=sd0)#
+e3 = rnorm(x3, mean=hi.mn, sd=seq(from=sd0, to=sd1, length.out=length(x3)))#
+e4 = rnorm(x4, mean=hi.mn, sd=sd1)#
+#
+#set up methylation values#
+m1 = rnorm(x1, mean=low.mn, sd = sdm)#
+m2 = rnorm(x2, mean=seq(low.mn, hi.mn, length.out=c(length(x2))), sd=sdm)#
+m3 = rnorm(x3, mean=hi.mn, sd=sdm)#
+m4 = rnorm(x4, mean=hi.mn, sd=sdm)#
+#
+#consolidate#
+alle=c(e1, e2, e3, e4)#
+allm=c(m1, m2, m3, m4)#
+allx=c(x1,x2, x3, x4)#
+loessm = predict(loess(allm~allx, span=0.1), allx)#
+#
+#plot#
+par(mfrow=c(2,1))#
+plot(alle~allx, pch=26, axes=F, ylab='Transcription', xlab='');axis(2, labels=F)#
+lines(alle~allx, lwd=2, col= transcription.col)#
+plot(alle~allx, pch=26, axes=F, xlab='Time', ylab='gbM');axis(1, labels=F);axis(2, labels=F)#
+lines(loessm~allx, lwd=2, col= meth.col)

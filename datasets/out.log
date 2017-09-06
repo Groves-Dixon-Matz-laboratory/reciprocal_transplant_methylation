@@ -1,0 +1,10 @@
+
+VCFtools - v0.1.13
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--vcf recipMeth_final_mindp5_maxMiss8.recode.vcf
+
+After filtering, kept 22 out of 22 Individuals
+After filtering, kept 543488 out of a possible 543488 Sites
+Run Time = 3.00 seconds

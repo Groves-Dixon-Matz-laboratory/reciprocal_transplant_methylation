@@ -97,9 +97,11 @@ ls *Sorted.bam > bams.txt
 cat bams.txt
 
 GENOME_REF="/work/02260/grovesd/lonestar/adig_genome/70779_ref_Adig_1.1_chrUn.fa"
+GENOME_REF="/scratch/02260/grovesd/recip_meth/snp_calling/run7_transcriptome/amil_longest_isogroups.fasta"
+
 
 #run mpileup
-echo "samtools mpileup -B -f $GENOME_REF -o pileup_results.vcf -v -t DP -u -b bams.txt" > runmpile
+echo "samtools mpileup -B -f amil_longest_isogroups.fasta -o pileup_results.vcf -v -t DP -u -b bams.txt" > runmpile
 launcher_creator.py -n runmpile -j runmpile -q normal -t 48:00:00 -a $allo -e $email
 sbatch runmpile.slurm
 
