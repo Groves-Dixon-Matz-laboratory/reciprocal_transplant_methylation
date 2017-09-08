@@ -122,45 +122,50 @@ sbatch doCalls.slurm
 #check the results
 vcftools --vcf raw_calls.vcf
 
+		Parameters as interpreted:
+			--vcf raw_calls.vcf
+
 		After filtering, kept 22 out of 22 Individuals
-		After filtering, kept 367354041 out of a possible 367354041 Sites
+		After filtering, kept 61667514 out of a possible 61667514 Sites
+		Run Time = 134.00 seconds
+
 
 #do initial filtering to cut away mess from the vcf
 echo "vcftools --vcf raw_calls.vcf --remove-indels --non-ref-af 0.1 --min-meanDP 1.0 --recode --recode-INFO-all --out recipMeth_filtered" > filter
-launcher_creator.py -n filtRecip -j filter -q normal -t 5:00:00 -N 1 -w 24 -a $allok -e $email
+launcher_creator.py -n filtRecip -j filter -q normal -t 5:00:00 -a $allo -e $email
 sbatch filtRecip.slurm
 
 
 #check the results
 vcftools --vcf recipMeth_filtered.recode.vcf 
 
-		#results
+
+		Parameters as interpreted:
+			--vcf recipMeth_filtered.recode.vcf
+
 		After filtering, kept 22 out of 22 Individuals
-		After filtering, kept 6175653 out of a possible 6175653 Sites
+		After filtering, kept 1143198 out of a possible 1143198 Sites
+
+
+
 
 #identify and remove singletons
 vcftools --vcf recipMeth_filtered.recode.vcf --singletons
 cat out.singletons | awk '{print $1"\t"$2}' > singlesToRemove.tsv
 vcftools --vcf recipMeth_filtered.recode.vcf --exclude-positions singlesToRemove.tsv --out recipMeth_noSingle --recode
 
-		#results
-		After filtering, kept 22 out of 22 Individuals
-		Outputting VCF file...
-		After filtering, kept 5860003 out of a possible 6175653 Sites
+
 
 
 
 #get variant stats
-vcfutils.pl qstats recipMeth_noSingle.recode.vcf > utilStats.tsv
-
-
-
 vcftools --vcf recipMeth_noSingle.recode.vcf --minDP 5 --min-meanDP 5.0 --max-missing 0.8 --out recipMeth_final_mindp5_maxMiss8 --recode
 
 	#results
-	After filtering, kept 22 out of 22 Individuals
-	Outputting VCF file...
-	After filtering, kept 22911 out of a possible 5860003 Sites
+		After filtering, kept 22 out of 22 Individuals
+		Outputting VCF file...
+		After filtering, kept 211504 out of a possible 1127872 Sites
+		Run Time = 15.00 seconds
 
 
 
