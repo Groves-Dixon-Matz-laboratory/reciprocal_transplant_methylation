@@ -13,6 +13,7 @@ library(adegenet)
 # gll=vcfR2genlight(read.vcfR("datasets/recip_snps_4-28-17_noSingletons.recode.vcf"))#old one generated with GATK and A.mil reference. 
 # gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp20_maxMiss95.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
 gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp5_maxMiss8.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
+gll=vcfR2genlight(read.vcfR("datasets/genic_SNPs.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
 class(gll)
 
 
@@ -79,5 +80,5 @@ for (i in 1:length(ldens)) {
 mns = tapply(a$LD1, a$pop, mean)
 abline(v=mns)
 snp.dp=dp
-save(snp.dp, file='datasets/snp.dapc.Rdata')
+save(snp.dp, file='datasets/snp.dapc_GENIC.Rdata')
 

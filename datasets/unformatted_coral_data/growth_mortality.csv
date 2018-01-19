@@ -1,0 +1,62 @@
+Species,Source,Transplant,Colony.ID,area_t1,AMR,area_t2,AMR,area_t3,AMR,amr_t1-t2,amr_t2-t3,amr_t1-t3,gain,mortality
+Acropora millepora,Miall,Miall,KK1,221.08,8.39,219.86,8.37,,,-0.28,,,,1
+Acropora millepora,Miall,Miall,KK2,119.98,6.18,156.11,7.05,180.36,7.58,12.33,7.48,22.6,0.366021771,0
+Acropora millepora,Miall,Miall,KK3,231.32,8.58,245.62,8.84,425.68,11.64,2.95,31.65,35.66,0.304054054,0
+Acropora millepora,Miall,Miall,KK4,,,,,,,,,,,
+Acropora millepora,Miall,Miall,KK5,203.32,8.04,233.92,8.63,256.92,9.04,6.77,4.8,12.41,0.234174764,0
+Acropora millepora,Miall,Miall,KK6,278.35,9.41,299.6,9.77,310,9.93,3.61,1.72,5.53,0.106916687,0
+Acropora millepora,Miall,Miall,KK7,181.02,7.59,182.67,7.63,,,0.45,,,,1
+Acropora millepora,Miall,Miall,KK8,245.53,8.84,266.57,9.21,317.31,10.05,4.03,9.1,13.68,0.195659263,0
+Acropora millepora,Miall,Miall,KK9,139.55,6.66,174.73,7.46,191.21,7.8,10.63,4.61,17.05,0.397827516,0
+Acropora millepora,Miall,Miall,KK10,116.62,6.09,122.34,6.24,158.46,7.1,2.36,13.81,16.57,0.436762383,0
+Acropora millepora,Miall,Miall,KK11,212.84,8.23,213.55,8.24,180.82,7.59,0.16,-7.98,-7.83,0.206466144,0
+Acropora millepora,Miall,Miall,KK12,150.91,6.93,241.14,8.76,308.34,9.91,20.89,13.08,42.94,0.457665904,0
+Acropora millepora,Miall,Miall,KK13,177.84,7.52,190.25,7.78,158.5,7.1,3.31,-8.72,-5.59,0.340267574,0
+Acropora millepora,Miall,Miall,KK14,181.81,7.61,219.87,8.37,250.19,8.92,9.07,6.67,17.31,0.234196891,0
+Acropora millepora,Miall,Miall,KK15,134.07,6.53,133.29,6.51,150.22,6.91,-0.29,6.16,5.85,0.178335858,0
+Acropora millepora,Hazard Bay,Miall,OK1,167.71,7.31,190.58,7.79,210.36,8.18,6.19,5.06,12,0.163883598,0
+Acropora millepora,Hazard Bay,Miall,OK2,250.67,8.93,255.92,9.03,232.93,8.61,1.03,-4.6,-3.6,0.120661509,0
+Acropora millepora,Hazard Bay,Miall,OK3,242.27,8.78,314.69,10.01,,,12.26,,,0.1115138,0
+Acropora millepora,Hazard Bay,Miall,OK4,333.62,10.31,371.38,10.87,414.42,11.49,5.22,5.64,11.45,0.13204772,0
+Acropora millepora,Hazard Bay,Miall,OK5,214.88,8.27,203.83,8.05,220.13,8.37,-2.67,3.92,1.21,0.088281758,0
+Acropora millepora,Hazard Bay,Miall,OK6,190,7.78,204.29,8.06,215.12,8.27,3.56,2.61,6.4,0.162765092,0
+Acropora millepora,Hazard Bay,Miall,OK7,332.69,10.29,360.85,10.72,376.5,10.95,3.98,2.15,6.38,0.091314217,0
+Acropora millepora,Hazard Bay,Miall,OK8,227.28,8.51,268.54,9.25,,,8,,,,1
+Acropora millepora,Hazard Bay,Miall,OK9,238.32,8.71,221.52,8.4,250.55,8.93,-3.72,6.35,2.53,0.102302858,0
+Acropora millepora,Hazard Bay,Miall,OK10,230.51,8.57,258,9.06,275.59,9.37,5.48,3.35,9.34,0.202338435,0
+Acropora millepora,Hazard Bay,Miall,OK11,122.39,6.24,112.36,5.98,,,-4.37,,,,1
+Acropora millepora,Hazard Bay,Miall,OK12,197.88,7.94,195.66,7.89,,,-0.57,,,,1
+Acropora millepora,Hazard Bay,Miall,OK13,296.33,9.71,331.89,10.28,350.55,10.56,5.51,2.77,8.77,0.089257504,0
+Acropora millepora,Hazard Bay,Miall,OK14,250.25,8.93,263.5,9.16,269.67,9.26,2.55,1.16,3.81,0.076323671,0
+Acropora millepora,Hazard Bay,Miall,OK15,176.11,7.49,198.12,7.94,203.67,8.05,5.72,1.39,7.54,0.084689174,0
+Acropora millepora,Miall,Hazard Bay,KO1,259.67,9.09,343.25,10.45,356.68,10.66,13.02,1.94,17.2,0.354788808,0
+Acropora millepora,Miall,Hazard Bay,KO2,89.6,5.34,90.5,5.37,94.68,5.49,0.5,2.28,2.79,0.202020202,0
+Acropora millepora,Miall,Hazard Bay,KO3,245.48,8.84,226.2,8.49,198.65,7.95,-4.17,-6.29,-10.04,0.098870056,0
+Acropora millepora,Miall,Hazard Bay,KO4,159.93,7.13,175.27,7.47,,,4.48,,,,1
+Acropora millepora,Miall,Hazard Bay,KO5,219.91,8.37,247.75,8.88,185.75,7.69,5.78,-13.41,-8.1,0.121242738,0
+Acropora millepora,Miall,Hazard Bay,KO6,264.96,9.18,317.12,10.05,280.66,9.45,8.59,-5.92,2.92,0.092695964,0
+Acropora millepora,Miall,Hazard Bay,KO7,210.17,8.18,214.31,8.26,266.15,9.2,0.97,11.44,12.53,0.188323917,0
+Acropora millepora,Miall,Hazard Bay,KO8,193.21,7.84,239.04,8.72,204.3,8.06,10.1,-7.55,2.83,0.120818806,0
+Acropora millepora,Miall,Hazard Bay,KO9,137.5,6.62,140.41,6.69,,,1.04,,,,1
+Acropora millepora,Miall,Hazard Bay,KO10,268.11,9.24,195.08,7.88,126.04,6.33,-17.23,-19.62,-31.44,0.073293633,0
+Acropora millepora,Miall,Hazard Bay,KO11,179.64,7.56,172.79,7.42,165.49,7.26,-1.96,-2.13,-4.02,0.097629679,0
+Acropora millepora,Miall,Hazard Bay,KO12,127.46,6.37,114.79,6.04,,,-5.37,,,,1
+Acropora millepora,Miall,Hazard Bay,KO13,285.45,9.53,228.17,8.52,196.08,7.9,-11.85,-7.3,-17.12,0.198454032,0
+Acropora millepora,Miall,Hazard Bay,KO14,164.94,7.25,162.67,7.2,170.43,7.37,-0.7,2.36,1.65,0.097408923,0
+Acropora millepora,Miall,Hazard Bay,KO15,124.85,6.3,126.41,6.34,135.33,6.56,0.62,3.47,4.11,0.148254999,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO33,163.21,7.21,,,,,,,,,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO1,118.18,6.13,146.11,6.82,,,10.07,,,,1
+Acropora millepora,Hazard Bay,Hazard Bay,OO2,340.36,10.41,329.17,10.24,241.79,8.77,-1.69,-14.29,-15.72,0.071150909,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO3,295.86,9.7,300.02,9.77,281.22,9.46,0.7,-3.18,-2.5,0.045519051,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO4,223.57,8.44,254.66,9,222.29,8.41,6.3,-6.57,-0.29,0.086443417,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO5,111.44,5.96,105,5.78,99.87,5.64,-3.02,-2.48,-5.34,0.068137297,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO6,328.43,10.22,357.49,10.67,212.74,8.23,4.15,-22.86,-19.52,0.061907608,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO7,351.71,10.58,315.11,10.02,353.09,10.6,-5.65,5.85,0.2,0.074512564,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO8,356.59,10.65,281.17,9.46,,,-12.62,,,,1
+Acropora millepora,Hazard Bay,Hazard Bay,OO9,133.16,6.51,143.89,6.77,149.79,6.91,3.8,2.03,6.06,0.059124951,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO10,352.24,10.59,352.9,10.6,307.22,9.89,0.09,-6.7,-6.61,0.064028253,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO11,183.06,7.63,220.62,8.38,,,8.91,,,,1
+Acropora millepora,Hazard Bay,Hazard Bay,OO12,156.97,7.07,151.76,6.95,,,-1.7,,,,1
+Acropora millepora,Hazard Bay,Hazard Bay,OO13,265.58,9.19,231.72,8.59,,,-7.06,,,,1
+Acropora millepora,Hazard Bay,Hazard Bay,OO14,329.27,10.24,273.69,9.33,237.25,8.69,-9.68,-6.9,-15.12,0.059355009,0
+Acropora millepora,Hazard Bay,Hazard Bay,OO15,178.05,7.53,128.36,6.39,122.11,6.23,-17.77,-2.47,-17.18,0.055469954,0

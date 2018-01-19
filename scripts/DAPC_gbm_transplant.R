@@ -11,19 +11,21 @@ source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylati
 
 
 ##### UPLOAD DATA ####
+#DEseq results for GBM
 ll=load("datasets/splitModels_MBD.RData")
 ll=load("datasets/mbd_3mo.RData")
 head(k2o.r)
 head(o2k.r)
 
 
-lnames=load("mbd_3_and_6mo.RData")
-# vsd.6mo=vsd[,grep("_3m", colnames(vsd))]
-vsd.3mo=vsd[,grep("_2m", colnames(vsd))]
-# head(vsd.6mo)
-head(vsd.3mo)
-# dim(vsd.6mo)
-dim(vsd.3mo)
+#Dataset including incomplete data for 6-month samples (not used in analysis)
+# lnames=load("mbd_3_and_6mo.RData")
+# # vsd.6mo=vsd[,grep("_3m", colnames(vsd))]
+# vsd.3mo=vsd[,grep("_2m", colnames(vsd))]
+# # head(vsd.6mo)
+# head(vsd.3mo)
+# # dim(vsd.6mo)
+# dim(vsd.3mo)
 
 
 ######## BUILD VOLCANO PLOTS ########
@@ -43,10 +45,21 @@ sig.genes2 = rownames(o2k.r)[o2k.r$pvalue<CUT];length(sig.genes2) ##increa
 sig.genes = unique(append(sig.genes1, sig.genes2))
 sig.genes=sig.genes[!is.na(sig.genes)]
 length(sig.genes)
+save(sig.genes, file="datasets/plasticGBMgenes.Rdata")
+
+#assign plastic genes based on log2Foldchange rather than p-value
+# CUT=1.25
+# sig.genes1 = rownames(k2o.r)[abs(k2o.r$log2FoldChange)>log(CUT, 2)];length(sig.genes1)
+# sig.genes2 = rownames(o2k.r)[abs(o2k.r$log2FoldChange)>log(CUT, 2)];length(sig.genes2) ##increa
+# sig.genes = unique(append(sig.genes1, sig.genes2))
+# sig.genes=sig.genes[!is.na(sig.genes)]
+# length(sig.genes)
 
 
 #optionally uncomment the line below to use all genes instead of plastic genes
+# results are qualitatively similar, but less significant than when you use plastic genes
 # sig.genes=rownames(vsd)
+
 
 #subset the variance stabilized counts
 vsds=vsd[sig.genes,]
@@ -60,9 +73,10 @@ head(vsds)
 # dim(vsds.6mo)
 dim(vsds)
 
-######## SHOW WHAT TYPE OF GENES SHOW GBM ########
+######## LOOK AT ABSOLUTE LEVELS OF METHYLATION FOR GENE SUBSETS ########
+#absolute methylation ()
 sig.genes1.o = rownames(okatk.r)[okatk.r$pvalue<CUT];length(sig.genes1)
-sig.genes2.o = rownames(okato.r)[okato.r$pvalue<CUT];length(sig.genes2) ##increa
+sig.genes2.o = rownames(okato.r)[okato.r$pvalue<CUT];length(sig.genes2)
 sig.genes.o = unique(append(sig.genes1.o, sig.genes2.o))
 sig.genes.o=sig.genes.o[!is.na(sig.genes.o)]
 length(sig.genes.o)
@@ -116,10 +130,13 @@ clus$grp=c(substr(colnames(a.vsd), start=1,stop=2)) #set the transplantation sit
 
 
 ######## BUILD DISCIMINATE FUNCTION ########
-dp=dapc(t(a.vsd[degs10,]),clus$grp, n.da=1, perc.pca=80)
 #discriminate between KK and OO
 #keep 1 discriminate function
 #use PCs to account for 80% of var
+#This sets up the axis describing 
+#'Native Keppel-like' and 'Native Orpheus-like' GBM patterns
+dp=dapc(t(a.vsd[degs10,]),clus$grp, n.da=1, perc.pca=80)
+
 
 #plot distributions
 quartz()
@@ -134,16 +151,15 @@ names(pred.sup)
 pred.sup$assign
 colnames(a.vsd.supp)
 
-#must create another dataframe structure in order to plot these predicted values
+#create another dataframe in order to plot these predicted values
 test<-dp
 test$ind.coord<-pred.sup$ind.scores
 test$posterior<-pred.sup$posterior
 test$assign<-pred.sup$assign
 test$grp<-as.factor(substr(colnames(a.vsd.supp), start =1, stop=2))
 
-
+#Plot the distributions of the transplant samples along the disciminant axis
 quartz()
-
 scatter(test,bg="white",scree.da=FALSE,legend=TRUE,solid=.4,ylim=c(0,0.6),xlim=c(-4,4)) 
 #adjust axes to correspond to previous graph, then overlay plots in photoshop
 
@@ -158,6 +174,7 @@ mns=tapply(gbm.dapc$LD1, gbm.dapc$treat, mean)
 
 
 #look at results
+library(scales)
 source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
 plot.mns=F
 personalized_ghosts(gbm.dapc, plot.mns=plot.mns) #for gbm
@@ -167,12 +184,17 @@ personalized_ghosts(gbm.dapc, plot.mns=plot.mns) #for gbm
 ######## CONNECT DAPC RESULTS WITH PHENOTYPIC DATA ########
 #upload DAPC results from SNPs and Tag-seq
 lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.Rdata') #output from adegenet_snps.R
+# lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc_GENIC.Rdata') #optional one based only on genic SNPs (in coding regions or promoters)
 snp.dapc=data.frame(snp.dp$ind.coord)
 rns = sub(".fastq_Sorted.bam", "", rownames(snp.dapc))
 rownames(snp.dapc) = rns
 snp.dapc$treat=substr(rownames(snp.dapc), start=1, stop=1)
 lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc.Rdata') #output from DAPC_tagseq_transplant.R (use this one for plastic genes)
+
 # # lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc_all_genes.Rdata') #output from DAPC_tagseq_transplant.R (This one includes all genes)
+# # lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.GBMplastic.dapc.Rdata') #This one was subset for the genes that showed evidence of GBM plasticity
+
+
 
 #UPLOAD THE TRAIT DATA TO MERGE WITH MBD-SEQ RESULTS
 lnames=load('datasets/bayRT_rlog_conditions_traits.RData')
@@ -211,7 +233,8 @@ print(traits)
 #that have sufficient number of samples represented.
 #This will serve as a summary fitness index
 head(traits)
-fit=traits[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')]
+fit=traits[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')];REV=-1
+fit=traits[,c('CARB', 'PROTEIN', 'LIPID')];REV=1 #optionally don't include GAIN
 rownames(fit) = traits$Colony.ID
 fit2=na.omit(fit)
 ko = grep("KO", rownames(fit2))
@@ -223,7 +246,7 @@ fitpc1 = data.frame(rownames(scores), scores[,1])
 colnames(fitpc1) = c('Colony.ID', 'fitpc1')
 x=merge(traits, fitpc1, by = 'Colony.ID', all.x=T)
 sum(x$Colony.ID==traits$Colony.ID) == nrow(traits)
-traits$fitpc1=x$fitpc1*-1
+traits$fitpc1=x$fitpc1*REV
 
 #plot with ggbiplot
 library(ggbiplot)
@@ -247,29 +270,12 @@ personalized_ghosts(ge.dapc, plot.mns=plot.mns)  #for ge
 ################## SAVE/LOAD ##################
 setwd("~/gitreps/reciprocal_transplant_methylation/")
 
-##save.image("datasets/DAPC_plastic_gbm3.Rdata") #DAPC_plastic_gbm3.Rdata is the final version as of BioRchiv submission. Includes SNP data from A.dig reference using mpileup filename=recipMeth_final_mindp5_maxMiss8.recode.vcf
+# save.image("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata") #DAPC_plastic_gbm3.Rdata is the final version as of BioRchiv submission. Includes SNP data from A.dig reference using mpileup filename=recipMeth_final_mindp5_maxMiss8.recode.vcf. Note these are not saved in the git repository because of size.
 
-# load("datasets/DAPC_plastic_gbm3.Rdata")
+# save.image("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_gbm4.Rdata") #same version but for all genes rather than just those showing GBM plasticity
+
+load("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata")
 source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
-
-
-
-
-######## CORRELATION BETWEEN DAPC COORDINATES AND FITNESS PROXIES ######## 
-#choose the dapc results to look at
-ld.col='gbm.ld1'
-ld.col='ge.ld1'
-ld.col='snp.ld1'
-
-# t.traits=rbind(traits[traits$treat=='KO',], traits[traits$treat=='OK',])
-
-#plot correlations with fitness proxies
-par(mfrow=c(2,3))
-plot_ld_fitness(traits, 'GAIN', ld.col= ld.col)
-plot_ld_fitness(traits, 'LIPID', ld.col= ld.col)
-plot_ld_fitness(traits, 'PROTEIN', ld.col= ld.col)
-plot_ld_fitness(traits, 'CARB', ld.col= ld.col)
-plot_ld_fitness(traits, 'ZOOX', ld.col= ld.col)
 
 
 
@@ -380,11 +386,126 @@ clim.df=pre.clim
 
 #plot
 XLAB = 'GBM Similarity'
-XLAB = 'GBM Pre-similarity'
+XLAB = 'GBM Clone-similarity'
 XLAB = 'SNP Similarity'
 XLAB = 'GE Similarity'
-quartz()
+
+
+#---------- PLOT FITNESS PROXY PC1 -----------#
 plot.subs=F
+rsCEX = 1
+yl="Fitness Proxy PC1"
+dsXLAB="DAPC"
+cloneds="Native Clone's DAPC"
+cloneXLAB = "Native Clone's Similarity"
+
+XLAB = "Similarity"
+#similarity crossed way
+s=plot_ld_fitness2(traits, 'fitpc1', ld.col= 'gbm.ld1', plot.natives = F, XLAB= dsXLAB, YLAB= yl)
+text(x=-2, y=1.2, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=rsCEX, col=color.set[2])  #for clone GBM similarity
+text(x=0.3, y=2.8, labels=paste("R2 =", paste(s[2,2], "&", sep='')), cex= rsCEX, col=color.set[3])    #for clone GBM similarity
+
+#similarity combined
+clim.df = clim.gbm
+s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB= yl)
+
+#clone similarity crossed way
+s=plot_swapped_ld_fitness(traits, 'fitpc1', ld.col='gbm.ld1', legend.pos=F, XLAB= cloneds, YLAB= yl)
+text(x=-2, y=1.5, labels=paste("R2 =", paste(s[1,2], "&", sep='')), cex=rsCEX, col=color.set[2]) 
+text(x=1, y=-1, labels=paste("R2 =", paste(s[2,2], "***", sep='')), cex=rsCEX, col=color.set[3])  
+plot_acclim_fitness(pre.clim, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB= yl)
+
+#-------------------------------------------#
+
+#---------- PLOT FITNESS PROXIES INDIVIDUALLY BOTH WAYS -----------#
+####### For similarity
+par(mfrow=c(5,2))
+ld.col='gbm.ld1'
+clim.df = clim.gbm
+dlXLAB='DACPC'
+plot.subs=F
+#gain
+yl=c(0.05, 0.43)
+s=plot_ld_fitness2(traits, 'GAIN', ld.col= ld.col, XLAB= dlXLAB, YLAB='Weight Gain (%)', YLIM=yl)
+text(x=0, y=0.28, labels=paste("R2 =", paste(s[3,2], "**", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.24, labels=paste("R2 =", paste(s[4,2], "**", sep='')), cex=1, col=color.set[3])    
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)', YLIM=yl)
+#carb
+yl=c(0.07, 0.21)
+s=plot_ld_fitness2(traits, 'CARB', ld.col= ld.col, XLAB= dlXLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)
+text(x=0, y=0.10, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.20, labels=paste("R2 =", paste(s[4,2], "n/s", sep='')), cex=1, col=color.set[3])    
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)
+#protein
+yl=c(1, 13)
+s=plot_ld_fitness2(traits, 'PROTEIN', ld.col= ld.col, XLAB= dlXLAB, YLAB="Protein (mg/cm2)", YLIM=yl); print(s)
+text(x=-2, y=10, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=8, labels=paste("R2 =", paste(s[4,2], "n/s", sep='')), cex=1, col=color.set[3])   
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+#lipid
+s=plot_ld_fitness2(traits, 'LIPID', ld.col= ld.col, XLAB=dlXLAB, YLAB="Lipid. (mg/cm2)");print(s)
+text(x=-2, y=0.03, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.18, labels=paste("R2 =", paste(s[4,2], "&", sep='')), cex=1, col=color.set[3]) 
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")
+#zoox
+s=plot_ld_fitness2(traits, 'ZOOX', ld.col= ld.col, XLAB=dlXLAB, YLAB="Symbionts. (cells/ul)"); print(s)
+text(x=-2, y=2.2e5, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=11e5, labels=paste("R2 =", paste(s[4,2], "n/s", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
+
+####### For native clone values
+par(mfrow=c(5,2))
+ld.col='gbm.ld1'
+clim.df = pre.clim
+cloneds="Native Clone's DAPC"
+cloneXLAB = "Native Clone's Similarity"
+plot.subs=F
+
+#gain
+yl=c(0.05, 0.43)
+s=plot_swapped_ld_fitness(traits, 'GAIN', ld.col= ld.col, YLIM=yl, XLAB= cloneds)
+text(x=-2, y=0.28, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.24, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=1, col=color.set[3])    
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB= cloneXLAB, YLAB='Weight Gain (%)', YLIM=yl)
+#carb
+yl=c(0.07, 0.21)
+s=plot_swapped_ld_fitness(traits, 'CARB', ld.col= ld.col, YLIM=yl, XLAB=cloneds)
+text(x=-2, y=0.18, labels=paste("R2 =", paste(s[1,2], "&", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.09, labels=paste("R2 =", paste(s[2,2], "n/s", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB= cloneXLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)
+#protein
+yl=c(1, 13)
+s=plot_swapped_ld_fitness(traits, 'PROTEIN', ld.col= ld.col, legend.pos=F, YLIM=yl, XLAB=cloneds)
+text(x=-2, y=8, labels=paste("R2 =", paste(s[1,2], "***", sep='')), cex=1, col=color.set[2]) 
+text(x=0, y=10, labels=paste("R2 =", paste(s[2,2], "**", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+#lipid
+yl=c(0, 0.26)
+s=plot_swapped_ld_fitness(traits, 'LIPID', ld.col= ld.col, legend.pos=F, YLIM=yl, XLAB=cloneds)
+text(x=-2, y=0.03, labels=paste("R2 =", paste(s[1,2], "*", sep='')), cex=1, col=color.set[2]) 
+text(x=.5, y=0.15, labels=paste("R2 =", paste(s[2,2], "**", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+#zoox
+yl=c(3e5, 13.5e5)
+s=plot_swapped_ld_fitness(traits, 'ZOOX', ld.col= ld.col, legend.pos=F, YLIM=yl, XLAB=dlXLAB)
+text(x=-2, y=10e5, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=4e5, labels=paste("R2 =", paste(s[2,2], "&", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+
+
+
+
+
+
+
+
+
+
+
+
+
+quartz()
+plot.subs=T
 par(mfrow=c(1,1))
 my_boxplot(clim.df, 'z', index='treat', YLAB=XLAB)
 par(mfrow=c(2,3))
@@ -393,13 +514,124 @@ plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="
 plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)" )
 plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")
 plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
-plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+text(x=-1.2, y=0.25, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=0.75, col=color.set[2])  #for GBM similarity
+text(x=1.1, y=-0.25, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=0.75, col=color.set[3])    #for GBM similarity
+
+
+s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+text(x=1.5, y=-1.5, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=0.75, col=color.set[2])  #for clone GBM similarity
+text(x=-1, y=2.3, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=0.75, col=color.set[3])    #for clone GBM similarity
 par(mfrow=c(1,1))
 #plot legend
 plot.new(); legend('center', c('KO','OK'), pt.bg=c(color.set[2], color.set[3]), pch=21, pt.cex=1.5, inset=c(0,-.3), xpd=T)
 
 
-#ASSEMBLE ACCLIMATION DATA FROM SNPS, GE AND GBM INTO SINGLE DATAFRAME
+######## CORRELATION BETWEEN DAPC COORDINATES AND FITNESS PROXIES ######## 
+#choose the dapc results to look at
+ld.col='gbm.ld1'
+ld.col='ge.ld1'
+ld.col='snp.ld1'
+
+# t.traits=rbind(traits[traits$treat=='KO',], traits[traits$treat=='OK',])
+
+#-------- plot each fitness proxy both ways ----------
+####### For similarity
+par(mfrow=c(4,2))
+ld.col='gbm.ld1'
+clim.df = clim.gbm
+dlXLAB='DAPC'
+plot.subs=F
+#gain
+yl=c(0.05, 0.43)
+s=plot_ld_fitness2(traits, 'GAIN', ld.col= ld.col, XLAB= dlXLAB, YLAB='Weight Gain (%)', YLIM=yl)
+text(x=0, y=0.28, labels=paste("R2 =", paste(s[3,2], "**", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.24, labels=paste("R2 =", paste(s[4,2], "**", sep='')), cex=1, col=color.set[3])    
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)', YLIM=yl)
+#carb
+yl=c(0.07, 0.21)
+plot_ld_fitness2(traits, 'CARB', ld.col= ld.col, XLAB= dlXLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)
+#protein
+yl=c(1, 13)
+plot_ld_fitness2(traits, 'PROTEIN', ld.col= ld.col, XLAB= dlXLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+
+#pc
+s=plot_ld_fitness2(traits, 'fitpc1', ld.col= ld.col, plot.natives = F, XLAB= XLAB, YLAB="Fitness Proxy PC1")
+text(x=-2.2, y=1, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=0.75, col=color.set[2])  #for clone GBM similarity
+text(x=0, y=2.8, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=0.75, col=color.set[3])    #for clone GBM similarity
+
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+
+
+###### For clone similarity
+#For similarity
+par(mfrow=c(4,2))
+ld.col='gbm.ld1'
+clim.df = pre.clim
+dlXLAB='Discriminant Function'
+plot.subs=F
+#gain
+yl=c(0.05, 0.43)
+s=plot_swapped_ld_fitness(traits, 'GAIN', ld.col= ld.col, YLIM=yl)
+text(x=-2, y=0.28, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.24, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=1, col=color.set[3])    
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)', YLIM=yl)
+#carb
+yl=c(0.07, 0.21)
+s=plot_swapped_ld_fitness(traits, 'CARB', ld.col= ld.col, YLIM=yl)
+text(x=-2, y=0.18, labels=paste("R2 =", paste(s[1,2], "&", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=0.09, labels=paste("R2 =", paste(s[2,2], "n/s", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)
+#protein
+yl=c(1, 13)
+s=plot_swapped_ld_fitness(traits, 'PROTEIN', ld.col= ld.col, legend.pos=F, YLIM=yl)
+text(x=-2, y=8, labels=paste("R2 =", paste(s[1,2], "***", sep='')), cex=1, col=color.set[2]) 
+text(x=0, y=10, labels=paste("R2 =", paste(s[2,2], "**", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+#pc
+s=plot_swapped_ld_fitness(traits, 'fitpc1', ld.col= ld.col, legend.pos=F, XLAB=XLAB, YLAB="Fitness PC1")
+text(x=-2.5, y=1.5, labels=paste("R2 =", paste(s[1,2], "**", sep='')), cex=1, col=color.set[2]) 
+text(x=2, y=-1, labels=paste("R2 =", paste(s[2,2], "**", sep='')), cex=1, col=color.set[3])  
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+
+
+
+
+
+#------- plot lipid and zoox to go in supplemental ---------
+par(mfrow=c(2,2))
+plot_ld_fitness2(traits, 'LIPID', ld.col= ld.col, YLAB="Lipid. (mg/cm2)")
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")
+plot_ld_fitness2(traits, 'ZOOX', ld.col= ld.col, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
+
+
+# plot_ld_fitness2(traits, 'ZOOX', ld.col= ld.col)
+plot_ld_fitness2(traits, 'fitpc1', ld.col= ld.col, plot.natives = F)
+clim.df = clim.gbm; XLAB = 'GBM Similarity'; plot.subs=F
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)')
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)")
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)" )
+# plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")
+# plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
+plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+
+
+
+
+plot_swapped_ld_fitness(traits, 'GAIN', ld.col= ld.col, YLIM=yl)
+plot_swapped_ld_fitness(traits, 'CARB', ld.col= ld.col)
+plot_swapped_ld_fitness(traits, 'PROTEIN', ld.col= ld.col, legend.pos=F)
+
+
+
+
+
+
+
+######ASSEMBLE ACCLIMATION DATA FROM SNPS, GE AND GBM INTO SINGLE DATAFRAME
 x=data.frame(clim.snp$geno, clim.snp$z)
 colnames(x) = c('geno', 'snp.match')
 m=traits

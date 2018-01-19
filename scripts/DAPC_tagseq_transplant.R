@@ -42,6 +42,7 @@ head(sig.genes)
 length(sig.genes)
 
 
+
 #actually select the genes
 CUT=0.01  #unadjusted p-value cutoff
 sig.genes1 = rownames(k2o.r)[abs(k2o.r$pvalue)<CUT];length(sig.genes1) #sig for KK vs KO
@@ -51,13 +52,12 @@ sig.genes=unique(sig.genes)
 sig.genes=sig.genes[!is.na(sig.genes)]
 head(sig.genes)
 length(sig.genes)
-vsds=vsd[sig.genes,]
+
+
+
+vsds=vsd[rownames(vsd) %in% sig.genes,]
 coo=conditions
-
-
-
-
-
+dim(vsds)
 
 
 #optionall set data for all genes
@@ -158,6 +158,28 @@ save(ge.dapc, file='~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc
 
 #for plastic genes
 save(ge.dapc, file='~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc.Rdata')
+
+#for gbm plastic genes
+save(ge.dapc, file='~/gitreps/reciprocal_transplant_methylation/datasets/ge.GBMplastic.dapc.Rdata')
+
+
+
+
+
+
+x=traits[,c('gbm.ld1', 'treat')]
+rownames(x) = traits$Colony.ID
+head(ge.dapc)
+m=merge(ge.dapc, x, by=0)
+m
+
+plot(m$LD1~m$gbm.ld1, col=get.cols(m$treat.y))
+
+
+
+
+
+
 
 #-------------------------------------------- Plot correlation with gain
 lda.res=a

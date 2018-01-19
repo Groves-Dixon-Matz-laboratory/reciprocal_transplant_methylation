@@ -81,3 +81,160 @@ plot(alle~allx, pch=26, axes=F, ylab='Transcription', xlab='');axis(2, labels=F)
 lines(alle~allx, lwd=2, col= transcription.col)#
 plot(alle~allx, pch=26, axes=F, xlab='Time', ylab='gbM');axis(1, labels=F);axis(2, labels=F)#
 lines(loessm~allx, lwd=2, col= meth.col)
+library(vcfR)#
+library(adegenet)#
+vcfInput = "/Users/grovesdixon/lab_files/projects/stickle_back_sex_chromosomes/large_files/chrXII.pun.recode.vcf"
+install.packeges("vcfR")
+install.packages("vcfR")
+gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp5_maxMiss8.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
+vcfInput = "/Users/grovesdixon/lab_files/projects/stickle_back_sex_chromosomes/large_files/chrXII.pun.recode.vcf"
+gll=vcfR2genlight(read.vcfR(vcfInput))#New SNPs generated using mpileup and A.dig reference 8/28/17
+class(gll)
+#look at genlight object#
+x=as.matrix(gll)#
+gi=as.genind(x)
+pop=substr(gll@ind.names,1,1)
+pop(gll)=pop
+pop
+gll@ind.names
+sexIds = "/Users/grovesdixon/gitreps/stickle_back_sex_chromosomes/datasets/pun_pheno.txt"
+names = gll@ind.names
+print(names)
+sdat = read.table("sexIds")
+sexIds = "/Users/grovesdixon/gitreps/stickle_back_sex_chromosomes/datasets/pun_pheno.txt"
+sdat = read.table("sexIds")
+sexIds = "/Users/grovesdixon/gitreps/stickle_back_sex_chromosomes/datasets/pun_pheno.txt"
+sdat = read.table("sexIds")
+sdat = read.table(sexIds)
+sdat
+colnames(sdat) = c('sample', 'SAMPLE', 'sex')
+names
+s=data.frame(sdat$sex)
+rownames(s) = sdat$sample
+s=s[names,]
+rownames(s) == names
+rownames(s)
+rownames(s) = sdat$sample
+s=data.frame(sdat$sex)
+s
+head(sdat)
+rownames(s) = sdat$sample
+s
+s=s[names,]
+s
+rownames(sdat) = sdat$sample
+s=sdat[names,]
+s
+rownames(s) == names
+sum(rownames(s) == names) == nrow(s)
+pop=s$sex
+pop
+s$sexName = s$sex
+sex=s$sex
+sex=s$sex#
+sex[sex==1]<-"Male"#
+sex[sex==2]<-"Female"#
+#
+pop=sex
+sex
+popnum=as.numeric(sex)
+sex
+sexNum = s$sex
+sexNum
+pop(gll)=sex
+pca=glPca(gll,nf=2)
+47-31
+31+8
+quartz()#
+pca$scores[,1]=(-1)*pca$scores[,1]#
+col=c("dodgerblue", "firebrick")#
+s.class(pca$scores,pop(gll),col=col,axesell=F,cstar=0,grid=F)
+s.class(pca$scores,pop(gll),col=col,axesell=F,cstar=0,grid=F, main='hey')
+? s.class
+s.class(pca$scores,pop(gll),col=col,axesell=F,cstar=0,grid=F, label=names)
+names
+names
+pca$scores
+rownames(pca)
+p=pca$scores
+rownames(p)
+rownames(p)==names
+sex
+col=sexNum
+col
+col
+col.set=c("dodgerblue", "firebrick")
+col=col.set[sexNum]
+col
+p
+plot(p$PC2~p$PC1, col=col)
+col
+cols=col.set[sexNum]
+p
+plot(p[,'PC1']~p[,'PC2'], col=cols)
+plot(p[,'PC2']~p[,'PC1'], col=cols)
+s.class(pca$scores,pop(gll),col=col,axesell=F,cstar=0,grid=F, label=names)
+s.class(pca$scores,pop(gll),col=color.set,axesell=F,cstar=0,grid=F, label=names)
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=names)
+pop(gll)
+head(pca$scores)
+abline(v=75.4972)
+abline(h=-9.280669)
+unique(pop(gll))
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+gg_color_hue <- function(n) {#
+  hues = seq(15, 375, length = n + 1)#
+  hcl(h = hues, l = 65, c = 100)[1:n]#
+}#
+col.set=gg_color_hue(2)
+col.set
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+cols=col.set[sexNum]
+plot(p[,'PC2']~p[,'PC1'], col=cols)
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=21, col='black')
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=21, col='black', cex=1.5)
+?text
+text(x=p[,'PC1'], y=p[,'PC2'], labels=names)
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=26, col='black', cex=1.5)
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=21, col='black', cex=1.5)
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=21, col='black', cex=1.5, xlab="PC1")
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=21, col='black', cex=1.5, xlab="PC1", ylab="PC1")
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=26, col='black', cex=1.5, xlab="PC1", ylab="PC1")
+text(x=p[,'PC1'], y=p[,'PC2'], labels=names, col=cols)
+infile = "chrXII.pun.recode.vcf"
+pdfOut = sub('.vcf', '.pdf', infile)
+pdfOut
+pdf(pdfOut)
+getwd()
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+dev.off()
+pdfOut
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+?glPca
+?glPca
+as.numeric('3')
+sexNum
+unique(pop(gll))
+pop(gll)
+as.character(pop(gll))
+as.character(pop(gll))[3:10]
+unique(as.character(pop(gll))[3:10])
+sort(unique(as.character(pop(gll))[3:10]))
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=26, col='black', cex=1.5, xlab="PC1", ylab="PC1")
+col.set
+x=data.frame(col.set)
+x
+col.set=data.frame(gg_color_hue(2))
+rownames(col.set) = c('Male', 'Female')
+unique(pop(gll))
+col.set[unique(pop(gll)),]
+s.class(pca$scores,pop(gll),col=col.set[unique(pop(gll)),],axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+s.class(pca$scores,pop(gll),col=col.set,axesell=F,cstar=0,grid=F, label=unique(pop(gll)))
+col.set
+pca
+pca$scores
+pop(gll)
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=26, col='black', cex=1.5, xlab="PC1", ylab="PC1")
+plot(p[,'PC2']~p[,'PC1'], bg=cols, pch=21, col='black', cex=1.5, xlab="PC1", ylab="PC2")
+cols

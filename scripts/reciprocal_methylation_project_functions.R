@@ -8,6 +8,7 @@ CEX.AXIS=1.5
 
 
 volcano_plot = function(dat, pcol='pvalue', log2col='log2FoldChange', fdrcol='padj', cut=0.1, XLIM=NULL, YLIM=NULL, MAIN='', draw.box=T, LEGEND='FDR<0.1'){
+	dat=data.frame(dat)
 	plot(-log(dat[,pcol], 10)~dat[,log2col], cex=0.5, mgp=MGP, xlab=expression(paste("Log"[2], ' Fold Difference Methylation')), ylab=expression(paste('log'[10],'(p-value)')), axes=F, xlim=XLIM, ylim=YLIM, main=MAIN)
 	axis(1, mgp=MGP);axis(2, )
 	if(draw.box){box()}
@@ -47,9 +48,9 @@ plot_subset_mbd_histogram=function(subset, color, BREAKS=50){
 	hist(sub$mbd.score, col=color, add=T, breaks=BREAKS)
 }
 
-plot_subset_mbd_density=function(subset, color, YLIM=c(0, 0.2), MAIN = 'Density'){
+plot_subset_mbd_density=function(subset, color, YLIM=c(0, 0.2), MAIN = 'Density', XLAB='Absolute Methylation'){
 	sub=classes[classes$gene %in% subset,]
-	plot(density(sub$mbd.score), col=color, ylim = YLIM, main = MAIN, lwd=1, xlab = 'MBD-score')
+	plot(density(sub$mbd.score), col=color, ylim = YLIM, main = MAIN, lwd=1, xlab = XLAB)
 	lines(density(classes$mbd.score), lwd=2)
 	lines(density(sub$mbd.score), col=color, lwd=2)
 }
@@ -434,7 +435,7 @@ do.plot = function(dat, y, x, ylab, xlab, xlim=NULL, ylim = NULL, main = '\n'){
 
 
 
-
+#merge_protein_names
 merge_protein_names = function(dat, sort.col=F, DECREASING=F){
 	load('datasets/ProteinTable.Rdata')
 	dat$locusName=rownames(dat)
@@ -451,56 +452,6 @@ merge_protein_names = function(dat, sort.col=F, DECREASING=F){
 
 
 
-
-#function to plot correlation between LD and a fitness proxy
-#this is run in the DAPC scripts
-plot_ld_fitness=function(traits, fit.proxy, ld.col, YLAB=fit.proxy, YLIM=NULL, legend.pos='topright', plot.natives=T){
-	LWD=3
-	LTY=1
-	plot(traits[,fit.proxy]~traits[,ld.col], data=traits, ylab=YLAB, xlab="GBM Discriminant Function", mgp=MGP, ylim=YLIM)
-	#OO samples
-	if(plot.natives==TRUE){
-		clip(-1e8,1e8,-1e8,1e8)
-		d=traits[traits$ori=='O' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
-		CEX=1
-		points(d[,fit.proxy]~d[, ld.col], bg='red', pch=21, cex=CEX)  #OO samples
-		lmoo=lm(d[,fit.proxy]~d[, ld.col])
-		clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-		# abline(lmoo, col = 'red', lty= LTY, lwd=LWD)
-		summary(lmoo)
-		clip(-1e8,1e8,-1e8,1e8)
-		#KK samples
-		d=traits[traits$ori=='K' & traits$tra=='K' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
-		points(d[,fit.proxy]~d[, ld.col], bg='blue', pch=21, cex=CEX)
-		lmkk=lm(d[,fit.proxy]~d[, ld.col])
-		clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-		# abline(lmkk, col = 'blue', lty= LTY, lwd=LWD)
-		summary(lmkk)
-		clip(-1e8,1e8,-1e8,1e8)
-		legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)
-		head(traits)
-	}
-	#KO samples
-	CEX=1.5
-	d=traits[traits$ori=='K' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
-	points(d[,fit.proxy]~d[, ld.col], bg=color.set[2], pch=21, cex=CEX) #KO samples
-	lmko=lm(d[,fit.proxy]~d[, ld.col])
-	clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-	abline(lmko, col = 'deepskyblue3', lty= LTY, lwd=LWD)
-	summary(lmko)
-	clip(-1e8,1e8,-1e8,1e8)
-	#OK samples
-	d=traits[traits$ori=='O' & traits$tra=='K' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
-	points(d[,fit.proxy]~d[, ld.col], bg=color.set[3], pch=21, cex=CEX)  #OK samples
-	lmok=lm(d[,fit.proxy]~d[, ld.col])
-	clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
-	abline(lmok, col = 'orange3', lty= LTY, lwd=LWD)
-	summary(lmok)
-	clip(-1e8,1e8,-1e8,1e8)
-	stat.list= list(summary(lmkk), summary(lmko), summary(lmok), summary(lmoo))
-	names(stat.list) = c('kk', 'ko', 'ok', 'oo')
-	return(stat.list)
-}
 
 
 #function to calculate z-score for a vector
@@ -534,29 +485,33 @@ get_acclim=function(trans, home){
 	return(trans)
 }
 
+YLINE.POS = 2.5
 
-
-plot_acclim_fitness = function(df, fit.proxy, nclim, plot.subs=F, XLAB='Match Score', YLAB=fit.proxy){
+plot_acclim_fitness = function(df, fit.proxy, nclim, plot.subs=F, XLAB='Match Score', YLAB=fit.proxy, YLIM=NULL){
 	LTY=1
 	colors=get.cols(df$treat)
-	plot(df[, fit.proxy]~df[, nclim], pch=21, bg=colors, col='black', cex=2, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
-	title(ylab=YLAB, line=3, cex.lab=CEX.AXIS)
-	
+	plot(df[, fit.proxy]~df[, nclim], pch=21, bg=colors, col='black', cex=2, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)
+	title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)
+	df=df[!is.na(df[,fit.proxy]),]
 	#plot regressions for subsets
 	if (plot.subs != F){
+		print("Plotting Subsets")
 		sub.lwd=1
-		sub.ko = df[df$treat=="KO",]
-		sub.ok = df[df$treat=="OK",]
+		sub.ko = df[df$treat=="KO" & !is.na(df[,fit.proxy]),]
+		sub.ok = df[df$treat=="OK" & !is.na(df[,fit.proxy]),]
 		lm.ko=lm(sub.ko[, fit.proxy]~ sub.ko[, nclim])
 		lm.ok=lm(sub.ok[, fit.proxy]~ sub.ok[, nclim])
-		clip(x1=min(na.omit(sub.ko[, nclim])), max(na.omit(sub.ko[, nclim])), y1=min(na.omit(df[,fit.proxy])), y2=1e8)
+		clip(x1=min(sub.ko[, nclim]), max(sub.ko[, nclim]), y1=min(sub.ko[,fit.proxy]), y2=max(sub.ko[,fit.proxy]))
+		print(sub.ko)
 		abline(lm.ko, lty=2, col=color.set[2], lwd= sub.lwd)
-		clip(x1=min(na.omit(sub.ok[, nclim])), max(na.omit(sub.ok[, nclim])), y1=min(na.omit(df[,fit.proxy])), y2=1e8)
+		# abline(v=c(min(sub.ko[, nclim]), max(sub.ko[, nclim])), col=color.set[2])
+		clip(x1=min(sub.ok[, nclim]), max(sub.ok[, nclim]), y1=min(sub.ok[,fit.proxy]), y2=max(sub.ok[,fit.proxy]))
 		abline(lm.ok, lty=2, col=color.set[3], lwd= sub.lwd)
+		# abline(v=c(min(sub.ok[, nclim]), max(sub.ok[, nclim])), col=color.set[3])
 	}
 
 	#plot for combination
-	clip(x1=min(na.omit(df[, nclim])), max(na.omit(df[, nclim])), y1=min(na.omit(df[,fit.proxy])), 1e8)
+	clip(x1=min(df[, nclim]), max(df[, nclim]), y1=min(df[,fit.proxy]), y2=max(df[,fit.proxy]))
 	lm1=lm(df[, fit.proxy]~df[, nclim])
 	abline(lm1, lwd=2, lty=LTY)
 	p=round(summary(lm1)$coefficients[2,4], digits=3)
@@ -582,6 +537,83 @@ plot_acclim_fitness = function(df, fit.proxy, nclim, plot.subs=F, XLAB='Match Sc
 		
 	}
 	else{print(summary(lm1))}
+}
+
+
+
+
+plot_sub_lm = function(df, fit.proxy, ld.col, sub.treatment, color, CEX=2, LWD=3, LTY=1, PLOT=T, LINE=T, line.col=color){
+	sub = na.omit(df[df$treat== sub.treatment, c(fit.proxy, ld.col)])
+	lm.sub = lm(sub[,fit.proxy]~sub[, ld.col])
+	if(PLOT){
+		points(sub[,fit.proxy]~sub[,ld.col], bg=color, cex=CEX, pch=21)
+		}
+	if (LINE ==TRUE){
+		clip(x1=min(sub[, ld.col]), max(sub[, ld.col]), y1=min(sub[,fit.proxy]), y2=max(sub[,fit.proxy]))
+		abline(lm.sub, col= line.col, lty= LTY, lwd=LWD)
+		clip(-1e8,1e8,-1e8,1e8)
+	}
+	r2=round(summary(lm.sub)$r.squared, 2)
+	p=round(summary(lm.sub)$coefficients[2,4], 4)
+	stats=c(sub.treatment, r2, p)
+	return(stats)
+	
+}
+
+plot_ld_fitness2= function(traits, fit.proxy, ld.col, legend.pos='topright', plot.natives = T, YLAB=fit.proxy, XLAB=ld.col, YLIM=NULL){
+	if (plot.natives){
+		plot(traits[,fit.proxy]~traits[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)
+		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)
+		kk=plot_sub_lm(traits, fit.proxy, ld.col, "KK", color.set[1], LINE=F, CEX=.8)
+		oo=plot_sub_lm(traits, fit.proxy, ld.col, "OO", color.set[4], LINE=F, CEX=.8)
+	}
+	else{
+		sub=rbind(traits[traits$treat=="KO",], traits[traits$treat=="OK",])
+		plot(sub[,fit.proxy]~ sub[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)
+		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)
+	}
+	ko=plot_sub_lm(traits, fit.proxy, ld.col, "KO", color=color.set[2], line.col='deepskyblue3')
+	ok=plot_sub_lm(traits, fit.proxy, ld.col, "OK", color=color.set[3], line.col='orange3')
+	# legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)
+	if (plot.natives){stat.res=rbind(kk, oo, ko, ok)}
+	else{stat.res=rbind(ko, ok)}
+	colnames(stat.res) = c('treat', 'R2', "p.value")
+	return(stat.res)
+}
+
+
+plot_swapped_ld_fitness = function(traits, fit.proxy, ld.col, legend.pos='topright', mgp=MGP, YLAB=fit.proxy, XLAB=ld.col, YLIM=NULL){
+	k.clones = swap_lds(traits, "K", "O", ld.col, fit.proxy)
+	o.clones = swap_lds(traits, "O", "K", ld.col, fit.proxy)
+	all.swapped = rbind(k.clones, o.clones)
+	treat = substr(all.swapped$Colony.ID, start=1, stop=2)
+	cols=get.cols(treat)
+	plot(all.swapped[,fit.proxy]~all.swapped[,ld.col], pch=26, mgp=MGP, ylim=YLIM, cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylab='', xlab=XLAB)
+	title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)
+	# kk=plot_sub_lm(all.swapped, fit.proxy, ld.col, "KK", color.set[1], LINE=F, CEX=.8, PLOT=F)
+	# oo=plot_sub_lm(all.swapped, fit.proxy, ld.col, "OO", color.set[4], LINE=F, CEX=.8, PLOT=F)
+	ko=plot_sub_lm(all.swapped, fit.proxy, ld.col, "KO", color=color.set[2], line.col='deepskyblue3')
+	ok=plot_sub_lm(all.swapped, fit.proxy, ld.col, "OK", color=color.set[3], line.col='orange3')
+	# legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)
+	stat.res=rbind(ko, ok)
+	colnames(stat.res) = c('treat', 'R2', "p.value")
+	return(stat.res)
+}
+
+
+#funciton to swab discriminant function values between clone-mates
+swap_lds = function(traits, ori, trans, ld.col, fit.proxy){
+	clones = traits[traits$ori == ori,]
+	natives = traits[traits$tra == ori,]
+	transplants = traits[traits$tra == trans,]
+	m = merge(natives, transplants, by = 'geno')
+	native.res = data.frame(m$Colony.ID.x, m[,paste(ld.col, 'y', sep='.')], m[,paste(fit.proxy, 'x', sep='.')])
+	transplant.res = data.frame(m$Colony.ID.y, m[,paste(ld.col, 'x', sep='.')], m[,paste(fit.proxy, 'y', sep='.')])
+	colnames(native.res) = c('Colony.ID', ld.col, fit.proxy)
+	colnames(transplant.res) = c('Colony.ID', ld.col, fit.proxy)
+	res=rbind(native.res, transplant.res)
+	res$treat = substr(res$Colony.ID, start=1, stop=2)
+	return(res)	
 }
 
 
@@ -786,4 +818,71 @@ add_column_data = function(dfx, dfy, mergeCol, col2add){
 # color.set=c('blue', 'dodgerblue', 'cyan', 'red', 'orange', 'firebrick')
 # quartz()
 # ggplot(data= plus.six, aes(LD1, fill=treat, color=treat)) + geom_density(alpha=0.6) + theme(panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black")) +scale_color_manual(values=color.set) + scale_fill_manual(values=color.set)  #+ geom_vline(xintercept=mns, color=color.set)
+
+
+
+
+
+
+
+
+#OLD VERSION OF PLOT LD FITNESS FUNCTION (FOR CROSS PLOTS)
+
+# #function to plot correlation between LD and a fitness proxy
+# #this is run in the DAPC scripts
+# plot_ld_fitness=function(traits, fit.proxy, ld.col, YLAB=fit.proxy, YLIM=NULL, legend.pos='topright', plot.natives=T){
+	# LWD=3
+	# LTY=1
+	# plot(traits[,fit.proxy]~traits[,ld.col], data=traits, ylab=YLAB, xlab="GBM Discriminant Function", mgp=MGP, ylim=YLIM)
+	# #OO samples
+	# if(plot.natives==TRUE){
+		# clip(-1e8,1e8,-1e8,1e8)
+		# d=traits[traits$ori=='O' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
+		# CEX=1
+		# points(d[,fit.proxy]~d[, ld.col], bg='red', pch=21, cex=CEX)  #OO samples
+		# lmoo=lm(d[,fit.proxy]~d[, ld.col])
+		# clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
+		# # abline(lmoo, col = 'red', lty= LTY, lwd=LWD)
+		# summary(lmoo)
+		# clip(-1e8,1e8,-1e8,1e8)
+		# #KK samples
+		# d=traits[traits$ori=='K' & traits$tra=='K' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
+		# points(d[,fit.proxy]~d[, ld.col], bg='blue', pch=21, cex=CEX)
+		# lmkk=lm(d[,fit.proxy]~d[, ld.col])
+		# clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
+		# # abline(lmkk, col = 'blue', lty= LTY, lwd=LWD)
+		# summary(lmkk)
+		# clip(-1e8,1e8,-1e8,1e8)
+		# legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)
+		# head(traits)
+	# }
+	# #KO samples
+	# CEX=1.5
+	# d=traits[traits$ori=='K' & traits$tra=='O' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
+	# points(d[,fit.proxy]~d[, ld.col], bg=color.set[2], pch=21, cex=CEX) #KO samples
+	# lmko=lm(d[,fit.proxy]~d[, ld.col])
+	# clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
+	# abline(lmko, col = 'deepskyblue3', lty= LTY, lwd=LWD)
+	# summary(lmko)
+	# clip(-1e8,1e8,-1e8,1e8)
+	# #OK samples
+	# d=traits[traits$ori=='O' & traits$tra=='K' & !is.na(traits[, ld.col]) & !is.na(traits[,fit.proxy]),]
+	# points(d[,fit.proxy]~d[, ld.col], bg=color.set[3], pch=21, cex=CEX)  #OK samples
+	# lmok=lm(d[,fit.proxy]~d[, ld.col])
+	# clip(x1=min(na.omit(d[, ld.col])), max(na.omit(d[, ld.col])), -1e8, 1e8)
+	# abline(lmok, col = 'orange3', lty= LTY, lwd=LWD)
+	# summary(lmok)
+	# clip(-1e8,1e8,-1e8,1e8)
+	# stat.list= list(summary(lmkk), summary(lmko), summary(lmok), summary(lmoo))
+	# names(stat.list) = c('kk', 'ko', 'ok', 'oo')
+	# rs=c(summary(lmkk)$r.squared, summary(lmko)$r.squared, summary(lmok)$r.squared, summary(lmoo)$r.squared)
+	# ps=c(summary(lmkk)$coefficients[2,4], summary(lmko)$coefficients[2,4], summary(lmok)$coefficients[2,4], summary(lmoo)$coefficients[2,4])
+	# statsTab=cbind(rs, ps)
+	# colnames(statsTab) = c('R', 'P')
+	# rownames(statsTab) = c('KK', 'KO', 'OK', 'OO')
+	# print("---------------")
+	# print("Stats:")
+	# print(statsTab)
+	# # return(stat.list)
+# }
 

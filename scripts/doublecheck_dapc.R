@@ -40,6 +40,7 @@ length(sg)
 
 vsds=vsd[sg,]
 nrow(vsds)
+vsds=vsd
 #560
 
 #fix samples names
@@ -104,6 +105,18 @@ colnames(y) = c('LD1')
 x==y
 z=x$LD1 - y$LD1
 z
+
+
+ldf = data.frame(all.dp$ind.scores)
+ldf$treat = substr(rownames(ldf), start = 1, stop=2)
+ldf$home=ldf$treat
+ldf$home[ldf$home=='KK']<-1
+ldf$home[ldf$home=='OO']<-1
+ldf$home[ldf$home != '1']<-0
+colset = data.frame(unique(ldf$treat), c('blue', 'cyan', 'orange', 'red'))
+colnames(colset) = c('treat', 'col')
+plot(density(ldf$LD1))
+
 
 
 ######## CONNECT DAPC RESULTS WITH PHENOTYPIC DATA ########
@@ -175,6 +188,7 @@ ttraits$conv = (mnd - ttraits$distance)/sdd
 ttraits
 
 
+
 #plot relationships
 fp="GAIN"
 plot(ttraits[,fp]~ttraits[,'conv'], pch=21, bg=ttraits[,'colors'], cex=2)
@@ -194,6 +208,8 @@ for (fp in c('GAIN', 'LIPID', 'CARB', 'PROTEIN', 'ZOOX')){
 	print(paste("Results for", fp))
 	print(summary(lmf))
 }
+
+
 
 
 

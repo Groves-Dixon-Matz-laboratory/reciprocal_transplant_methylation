@@ -1,4 +1,8 @@
 #correlation_with_expressionV2.R
+#This is the correct script to plot the scatterplots showing correlation between GBM and transcription
+#last updated 12-31-17
+
+
 #This script compares DESeq results between the MBD-seq and tag-seq data
 setwd("~/gitreps/reciprocal_transplant_methylation")
 source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
@@ -77,7 +81,13 @@ mtext('A', side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
 
 #plot density to go with it
 x=mg.orico$met_log2FoldChange
+sig=mg.orico[! is.na(mg.orico$met_padj),]
+sx=sig$met_log2FoldChange[sig$met_padj < 0.1]
 plot(density(na.omit(x)), xlim=c(-4,4), axes=F, main='',xlab='');axis(1)
+lines(density(sx), col='red')
+
+
+lnames=load("datasets/plasticGBMgenes.Rdata")
 
 #----------- PLOT CORRELATION BETWEEN ORIGIN DIFFERENCES IN METHYLATION AND TRANSCRIPTION -----------#
 
@@ -181,6 +191,41 @@ summary(lm2)
 #build density plots
 plot(density(na.omit(odat$met_log2FoldChange)), main='', xlab='', xlim=XLIM, axes=F, col='black');axis(1)
 lines(density(na.omit(sig.both$met_log2FoldChange)), col='purple')
+
+
+#---------------- plot the plastic GBM genes
+#build plot for full dataset comparisons (all KK+KO samples vs all OO+OK samples)
+obak=odat
+odat=odat[odat$Row.names %in% sig.genes,]
+plot(odat$rna_log2FoldChange ~ odat$met_log2FoldChange, col = alpha('black', alpha), xlim =c(-3,3), ylim = c(-3,3), xlab = expression(paste("Log"[2], ' Difference Methylation')), ylab = expression(paste("Log"[2], " Difference Transcription")), axes = F, mgp=c(2.1,1,0), cex=CEX)
+axis(1); axis(2, las=2);box()
+abline(h=0, v=0, lty=2, col='grey')
+lm.all = lm(odat$rna_log2FoldChange ~ odat$met_log2FoldChange)
+summary(lm.all)
+
+#subset for genes that show significant variation
+sig.meth = odat[odat[,paste('met', P.TYPE, sep="_")] < CUT,]
+dim(sig.meth)
+
+#overlay points for subset
+points(sig.meth$rna_log2FoldChange ~ sig.meth$met_log2FoldChange, col = 'black', pch = 21, xlim = XLIM, ylim = YLIM, bg='red', cex=CEX)
+
+#stats
+lm1 = lm(sig.meth$rna_log2FoldChange ~ sig.meth$met_log2FoldChange)
+abline(lm1, col = 'red')
+summary(lm1)
+N=nrow(na.omit(sig.meth[,c('rna_log2FoldChange', 'met_log2FoldChange')]))
+R2=paste(sprintf("%.3f", round(summary(lm1)$r.squared, 3)), "****",sep='')
+z = cor.test(sig.meth$rna_log2FoldChange, sig.meth$met_log2FoldChange, method="spearman")
+print(z)
+rho = z$estimate
+p = z$p.value
+text(x=text.x, y=text.y, bquote('N =' ~ .(N)), col='red')
+text(x=text.x, y=text.y-.6, bquote("R"^2 ~ '=' ~ .(R2)), col='red')
+legend('topleft', 'Sig. GBM (p<0.01)', pt.bg='red', col='black', pch=21, pt.cex=1.2, box.lwd=0, inset=c(0, -.2), xpd=T)
+mtext('B', side = 3, line = 1, adj = -.25, cex = 2, xpd=T)
+
+
 
 
 #----------- CHECK IF COUNTS OF SIGNIFICANT GBM GENES CORRELATES WITH SIG GE COUNTS -----------#

@@ -23,34 +23,23 @@ DEseq_Tagseq
 	Test for differential transcription by origin and transplantation
 
 
-bisulfite1_initialize.R
-	prepare bisulfite data from bismark
+split_models_gbm.R
+	Test for differential GBM for groups subdivided for closer examination of environment and origin effects
 
-bisulfite2_ori_trans.R
-	plot differences between groups for bisulfite data and MBDseq for comparison
-
-
-
-
-
-
-plot_heatmaps.R
-	Build overall correlation heatmaps for tagseq and MBDseq illustrating strong genetic component to both
-
-
+split_models_ge.R
+	Test for differential transcription for groups subdivided for closer examination of environment and origin effects
 	
 
+correlation_with_expression.R
+	Look at how GBM and transcription correlate
 
-plot_mbd_counts.R
-
-
-
-
-
+geCorrs.R
+	Look at how GBM and transcription correlate across all genes
 
 
+DAPC_tagseq_transplant.R
+	Run DAPC on transcription data
 
-Additional Scripts for analyses not included in publication:
+DAPC_gbm_transplant.R
+	Run DAPC on GBM data and correlate with fitness proxies
 
-DEseq_promoters
-	Test for differential promoter methylation by origin and transplantation

@@ -67,15 +67,12 @@ sbatch r2_trim.slurm
 
 
 #now quality trim all of them 
-
-
-#!!!!NOTE DID THIS WRONG! SHOULD HAVE QUALITY TRIMMED AS PAIRED-ENDS IN CASE SOME ARE REMOVED!
-#GOT LUCKY THAT NO READS WERE FILTERED OUT SO THE PAIRED END FILES STAID CONSISTENT.
 >qtrim; for file in *R1_001.fastq; do echo "cutadapt -q 35 -o ${file/_001.fastq/_trimmed.fastq} $file" >> qtrim;done
 for file in *R2_hardTrimmed.fastq; do echo "cutadapt -q 35 -o ${file/_hardTrimmed.fastq/_trimmed.fastq} $file" >> qtrim;done
 launcher_creator.py -n qtrim -j qtrim -q normal -N 1 -w 48 -t 0:30:00 -a tagmap
 sbatch qtrim.slurm 
 
+#!*This was not the right way to do this, but double-checked and trimmed read files were still paired correctly
 
 #check you have all your files
 ls *_trimmed.fastq | wc -l
@@ -217,16 +214,6 @@ cat finalCoords.tsv | wc -l
 #now we have the coordinates for the amplicons
 
 #use the coordinates to edit the gff
-
-
-##
-
-
-
-
-
-
-
 
 
 

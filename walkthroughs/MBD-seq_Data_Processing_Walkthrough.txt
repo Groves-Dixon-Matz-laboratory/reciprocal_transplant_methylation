@@ -238,46 +238,6 @@ assemble_htseq_counts.py -i *promoter_counts.gff -o all_promoter_counts.txt -pos
 
 
 
-
-##################################################
-################# SYMBIONT TYPING ################
-##################################################
-#get the file symABCD.fasta which has the symbiont transcriptomes concatenated as single chromosomes as chr11-14
-grep "^>" symABCD.fasta
-		>chr11
-		>chr12
-		>chr13
-		>chr14
-
-#concatenate those onto the genome you want to use to soak up all the coral reads
-concatFasta.pl fasta=amil_genome_fold_c.fasta num=10
-
-
-#concat them all together
-cat amil_genome_fold_c_cc.fasta symABCD.fasta > typingRef.fasta
-
-#check that you have 14 total chromosomes
-grep "^>" typingRef.fasta
-
-
-#now map to it
-echo "bowtie2-build typingRef.fasta typingRef.fasta" >build
-launcher_creator.py -n build -j build -q normal -t 1:00:00 -a $allo
-sbatch build.slurm
-
-
->ztypeMaps; for file in *.trim; do echo "bowtie2 --local -x typingRef.fasta -U $file -S $file.sam --no-unal -k 5" >> ztypeMaps; done
-launcher_creator.py -n ztypeMaps -j ztypeMaps -q normal -t 6:00:00 -q normal -a tagmap -N 2 -w 48
-sbatch ztypeMaps.slurm
-
-
-#now get the clade ratios
-echo "zooxType.pl > zooxRatios.tsv" > typing
-launcher_creator.py -n typing -j typing -q normal -t 5:00:00 -a $allo -e $email
-sbatch typing.slurm
-
-
-
 #############################################################################
 ################## GETTING START POINT DENSITIES ACROSS CONTIGS #############
 #############################################################################
@@ -554,13 +514,6 @@ lines(mdat$mns~mdat$xs, lwd = 2)
 dev.off()
 
 
-
-
-
-
-
-
-
 ####################################################################
 #################### LOOK AT METHYLATION ALONG EXONS  ##############
 ####################################################################
@@ -574,138 +527,6 @@ number_exons_in_gff.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_
 
 launcher_creator.py -n doExonCounts -j doExonCounts -q normal -t 6:00:00 -a $allo -e $email -N 1 -w 48
 sbatch doExonCounts.slurm
-
-
-
-
-
-
-
-
-
-
-|||||||||||||||||||||||||||||||| OLD. DECIDED NOT TO USE ||||||||||||||||||||||||||||||||
-#set up a gff with introns
-delineate_introns.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_introns.gff3 
-
-#get the counts with htseq
->doExonCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
- -f sam -t CDS -m intersection-nonempty --stranded=no -i INTRON-EXON $file ref_Adig_1.1_scaffolds_introns.gff3 > ${file/.trimSorted_dupsRemoved.sam/_exon_counts.gff}"\
- >> doExonCounts; done
- 
-launcher_creator.py -n doExonCounts -j doExonCounts -q normal -t 6:00:00 -a $allo -e $email -N 1 -w 48
-sbatch doExonCounts.slurm
-
-
-
-#get the counts with htseq
->doIntronCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
- -f sam -t intron -m intersection-nonempty --stranded=no -i INTRON-EXON $file ref_Adig_1.1_scaffolds_introns.gff3 > ${file/.trimSorted_dupsRemoved.sam/_introns_counts.gff}"\
- >> doIntronCounts; done
-
-launcher_creator.py -n doIntronCounts -j doIntronCounts -q normal -t 6:00:00 -a $allo -e $email -N 1 -w 48
-sbatch doIntronCounts.slurm
-
-#asssemble the counts into single file
-assemble_htseq_counts.py -i *exon_counts.gff -o numbered_exon_counts.tsv -pos 1 -delim .
-assemble_htseq_counts.py -i *introns_counts.gff -o numbered_intron_counts.tsv -pos 1 -delim .
-
-
-
-#fix sample names
-sed -i.bak 's/_exon_counts//g' numbered_exon_counts.tsv
-sed -i.bak 's/_introns_counts//g' numbered_intron_counts.tsv
-
-
-#REFORMAT THE OUTPUT SO IT DOESN'T NEED TO BE DONE IN R
-#concatenate the data
-grep "XP_" numbered_intron_counts.tsv | awk 'BEGIN { OFS = "\t"}{x=$1"-intron";$1=x; print'} > introns.tsv
-grep "XP_" numbered_exon_counts.tsv | awk 'BEGIN { OFS = "\t"}{x=$1"-exon";$1=x; print'} > exons.tsv
-cat introns.tsv exons.tsv > all.tsv
-#pull out the row name data for separate input
-cat all.tsv | awk '{split($1, a, "-"); split(a[2], b, "num"); print a[1]"\t"b[2]"\t"a[3]}' > row_features.tsv
-#assemble final input file
-grep "KK10_2m" numbered_intron_counts.tsv > all_intron_exon_counts.tsv
-cat all.tsv >> all_intron_exon_counts.tsv 
-
-#now upload into R
-
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-
-
-
-
-############################################################################
-#################### GET GBM AND PROMOTER COUNTS AT SAME TIME ##############
-############################################################################
-#set up a gff that has promoters and ambigous areas labeled to account for tss methylation
-delineate_tss_gbm.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_promoters_up500_down500.gff3 -pUp 1000 -pDown 200 -a 0 -c contig_sizes.tsv 
-
-#or to do it based on entire gene (This did not work as well, recommend using version 1 as above).
-delineate_tss_gbmV2.py -i ref_Adig_1.1_scaffolds.gff3 -o ref_Adig_1.1_scaffolds_promoters_gbm.gff3 -pUp 900 -pDown 100 -c contig_sizes.tsv
-
-
-#now get counts
->gbmPromoterCounts; for file in *_dupsRemoved.sam; do echo "htseq-count\
- -f sam -t CDS -m intersection-nonempty --stranded=no -i PROMOTER_GBM $file ref_Adig_1.1_scaffolds_promoters_up1000_down200.gff3 > ${file/.trimSorted_dupsRemoved.sam/_CDS_counts.gff}"\
- >> gbmPromoterCounts; done
-launcher_creator.py -n gbmPromoterCounts -j gbmPromoterCounts -q normal -t 6:00:00 -N 1 -w 48 -a $allo -e $email
-sbatch gbmPromoterCounts.slurm
-
-#asssemble the counts into single file
-assemble_htseq_counts.py -i *_counts.gff -o promoter_gbm_counts_p-1000_200.tsv -pos 1 -delim .
-
-#fix sample names
-sed -i.bak 's/_CDS_counts//g' promoter_gbm_counts_p-1000_200.tsv
-
-#get a dataframe with feature types
-cat promoter_gbm_counts_p250_both.tsv | awk '{split($1, a, "-"); print a[1]}'>featureTypes_p900-100.tsv
-
-
-#built two files:
-promoter_gbm_counts_p900-100.tsv -- this one has the promoter assigned at 1000 bp starting at position +100 inside of gene
-
-
-#################################################################################
-############## LOOKING AT METHYLATION ACROSS WINDOWS USING BEDTOOLS #############
-#################################################################################
-#first we need a table of chromosome lengths from out genome
-fasta_sequence_characters.py -fa /work/02260/grovesd/genome/amil_genome_fold_c.fasta > contig_sizes.tsv
-
-#now use bedtools makewindows to build a windows file
-#this will be a three column table with the three required bed file features:
-#chrom, chromStart, chromEnd
-nano makeWindow
-bedtools makewindows -g contig_sizes.tsv -w 500 > 500bp_windows.bed
-bedtools makewindows -g contig_sizes.tsv -w 1000 > 1kb_windows.bed
-bedtools makewindows -g contig_sizes.tsv -w 5000 > 5kb_windows.bed
-bedtools makewindows -g contig_sizes.tsv -w 10000 > 10kb_windows.bed
-bedtools makewindows -g contig_sizes.tsv -w 100000 > 100kb_windows.bed
-
-launcher_creator.py -n makeWindow -j makeWindow -t 3:00:00 -q normal -a tagmap -e grovesdixon@gmail.com
-sbatch makeWindow.slurm
-
-
-#then you can get the fold coverage on each window
->multicov;for file in $(ls *windows.bed); do echo "bedtools multicov -bed $file -bams *.bam > ${file/windows.bed/}counts.bed" >> multicov; done
-launcher_creator.py -n multicov -j multicov -q normal -t 10:00:00 -a tagmap -e grovesdixon@gmail.com
-sbatch multicov.slurm
-
-
-#this will output counts files without headers and with the first three fields as the contig, the start, and the end of the window
-
-#first concatenate the first three fields into a single one
-for file in $(ls *counts.bed); do cat $file | awk 'BEGIN {OFS = "\t"}{$3 =$1 "_" $2 "_" $3; $1 = ""; $2 = ""; print $0}' | cut -f1,2 --complement > ${file/counts.bed/counts2.bed}; done
-
-#create a header
-ls *bam | awk 'BEGIN {x="chr_strt_end"}{gsub(/.trim.bam/, "", $0); x = x "\t" $0;} END {print x}' > header
-
-#concatenate the headers with counts files
-for file in $(ls *counts2.bed); do cat header $file > ${file/2.bed/.tsv}; done
-
-#now you have read files ready for input into DESeq
-
 
 
 
