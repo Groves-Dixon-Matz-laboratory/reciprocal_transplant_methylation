@@ -8,5 +8,6 @@ bisulfite_validation  -- files associated with bisulfite validation of MBD-seq r
 datasets              -- datasets used as input for statistical analyses. See README within this directory for more.
 scripts               -- scripts used for dataprocessing and statistical analyses.
 walkthroughs          -- text files with instructions for data processing and statistical analyses.
+go_mwu                -- these files were not used in final project
 
 

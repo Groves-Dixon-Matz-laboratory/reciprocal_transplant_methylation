@@ -1,7 +1,7 @@
 #Bisulfite_amplicon_sequencing Walkthrough
 #Instructions for targeted sequencing of bisulfite converted DNA (Abey and Shendure 2012; Masser et al. 2013, Masser et al. 2015)
 #Groves Dixon
-#12/8/16
+#last updated 2/26/18
 
 
 
@@ -189,7 +189,7 @@ cat *PE*meth_out.tsv >> all_PE_bismark_results.tsv
 
 
 
-#Analyze the *bismark_results.tsv files with bisulfite1_initialize.R
+#Analyze the all_PE_bismark_results.tsv file with bisulfite1_initialize.R
 
 
 
