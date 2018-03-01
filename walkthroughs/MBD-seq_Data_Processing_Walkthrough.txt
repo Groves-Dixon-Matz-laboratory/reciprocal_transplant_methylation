@@ -139,7 +139,7 @@ bowtie2-build adig_zoox_combo.fa adig_zoox_combo.fa
 #map the reads
 GENOME_REF="/work/02260/grovesd/lonestar/adig_genome/adig_zoox_combo.fa"
 >maps; for file in *.trim; do echo "bowtie2 --local -x $GENOME_REF -U $file -S $file.sam --no-unal -k 5" >> maps; done
-launcher_creator.py -n maps -j maps -q normal -t 10:00:00 -q normal -a $allo -N 2 -w 48
+launcher_creator.py -n maps -j maps -q normal -t 24:00:00 -q normal -a $allo -N 2 -w 48
 sbatch maps.slurm
 
 

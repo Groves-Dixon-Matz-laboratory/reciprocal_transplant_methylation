@@ -24,7 +24,6 @@ dim(counts)
 #LOOK AT THE MEANS OF THE COLUMNS
 #HOW MANY ARE GREATER THAN 3?
 mns = apply(counts, 1, mean)
-# counts=counts[mns>1,] #get rid of most promoters that show little or no methylation
 table(mns > 3)
 dim(counts)
 
@@ -92,7 +91,7 @@ save(traco, file="traco_meth_PROMOTERS_transplant-colonyid_p250both.Rdata")
 rld=rlog(dds)
 rld.df = assay(rld)
 colnames(rld.df) = colnames(counts)
-save(rld.df, file="rld_PROMOTERS__p-1000_200.Rdata")
+save(rld.df, file="datasets/rld_PROMOTERS__p-1000_200.Rdata")
 
 ### compare read counts for select genes
 #single gene

@@ -1,0 +1,69 @@
+#################################################################
+#################### ASSOCIATIONS WITH PLINK ####################
+#################################################################
+
+
+#first replace scaffolds with numbers
+replace_scaffolds_for_plink.py recipMeth_maf.2_mindp5_maxmiss.8_hetexess.8.recode.vcf
+
+#get phenotype files from fitness PCA data (in script DAPC_gbm_transplant.R)
+nano fitpc1.phe
+#pasted below:
+K10	K10	-0.419470972
+K13	K13	-0.768671242
+K14	K14	-1.396013321
+K15	K15	-1.241568799
+K2	K2	0.06023911
+K3	K3	-0.918130778
+K5	K5	-1.109357887
+K6	K6	-0.937662069
+K7	K7	0.608079949
+K8	K8	-0.54185644
+O1	O1	0.600039315
+O10	O10	3.614159275
+O13	O13	1.168205548
+O14	O14	-1.824610895
+O15	O15	-1.749400618
+O2	O2	1.454248265
+O3	O3	1.053691567
+O4	O4	1.472551254
+O5	O5	0.290999659
+O6	O6	0.950723358
+O7	O7	-1.000756731
+O9	O9	0.634562454
+
+
+#reduce to only those with data
+cut -f 1 fitpc1.pheno > withData.txt
+vcftools --vcf recipMeth_maf.2_mindp5_maxmiss.8_hetexess.8.recode_scaffReplaced.vcf --keep withData.txt --recode --out plinkVcf
+
+
+#generate plink .ped files for each chromosome vcf
+vcftools --vcf plinkVcf.recode.vcf --plink --out pedfile
+
+
+#run plink
+/work/02260/grovesd/lonestar/plink-1.07-i686/plink --file pedfile --pheno fitpc1.phe --linear --out fitAsso --noweb
+
+#results in fitAsso.assoc.linear
+
+
+
+
+
+
+
+#run associations with sex
+>assoc;for file in *pun.ped; do echo "plink --file ${file/.ped/} --pheno pun_pheno.txt --assoc --out ${file/.ped/} --noweb" >> assoc;done
+for file in *sin.ped; do echo "plink --file ${file/.ped/} --pheno sin_pheno.txt --assoc --out ${file/.ped/} --noweb" >> assoc;done
+for file in *tym.ped; do echo "plink --file ${file/.ped/} --pheno tym_pheno.txt --assoc --out ${file/.ped/} --noweb" >> assoc;done
+
+launcher_creator.py -n assoc -j assoc -q normal -t 1:00:00 -a $allok -e $email -N 1 -w 24
+sbatch assoc.slurm
+
+
+#plot the results for each chromosome on TACC with chrom_plink_plot_TACC.R
+#note change 2nd argument to "yes" to plot the loess line, but it takes a long time
+>plot_assoc; for file in *.assoc; do echo "chrom_plink_plot_TACC.R $file no" >> plot_assoc;done
+launcher_creator.py -n plot_assoc -j plot_assoc -q normal -t 00:30:00 -a $allok -e $email -N 1 -w 48
+sbatch plot_assoc.slurm

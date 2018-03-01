@@ -10,10 +10,8 @@ library(adegenet)
 
 
 #upload the vcf
-# gll=vcfR2genlight(read.vcfR("datasets/recip_snps_4-28-17_noSingletons.recode.vcf"))#old one generated with GATK and A.mil reference. 
-# gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp20_maxMiss95.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
-gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp5_maxMiss8.recode.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
-gll=vcfR2genlight(read.vcfR("datasets/genic_SNPs.vcf"))#New SNPs generated using mpileup and A.dig reference 8/28/17
+gll=vcfR2genlight(read.vcfR("datasets/recipMeth_final_mindp5_maxMiss8_maf.2_maxNonref.8_FINAL.recode.vcf")); type = "ALL"
+gll=vcfR2genlight(read.vcfR("datasets/genic_SNPs_maf.2_maxNonRef.8_maxMiss.8_mindp5_FINAL.recode.vcf")); type = 'GENIC'
 class(gll)
 
 
@@ -37,8 +35,18 @@ popnum=as.numeric(factor(pop,levels=c("O","K")))
 pca=glPca(gll,nf=2)
 quartz()
 pca$scores[,1]=(-1)*pca$scores[,1]
-col=c("dodgerblue", "firebrick")
+col = get.cols(c("KO", 'OK'))
 s.class(pca$scores,pop(gll),col=col,axesell=F,cstar=0,grid=F)
+snp.pca = data.frame(pca$scores)
+
+#plot pca
+treat = substr(rownames(snp.pca), start = 1, stop=1)
+treat[treat=="K"]<-"KO"
+treat[treat=="O"]<-"OK"
+variance <- pca$eig*100/sum(pca$eig)
+plot(snp.pca$PC2~snp.pca$PC1, pch=21, bg=get.cols(treat), cex=1.5)
+
+
 
 
 # adegenet: finding clusters (even though we know what clusters we want) - choose 4 PCs and 2 groups
@@ -80,5 +88,6 @@ for (i in 1:length(ldens)) {
 mns = tapply(a$LD1, a$pop, mean)
 abline(v=mns)
 snp.dp=dp
-save(snp.dp, file='datasets/snp.dapc_GENIC.Rdata')
+out=paste(paste("datasets/snp.dapc", type, sep="."), "Rdata", sep=".")
+save(snp.dp, snp.pca, file=out)
 

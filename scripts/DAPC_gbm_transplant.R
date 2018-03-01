@@ -47,15 +47,6 @@ sig.genes=sig.genes[!is.na(sig.genes)]
 length(sig.genes)
 save(sig.genes, file="datasets/plasticGBMgenes.Rdata")
 
-#assign plastic genes based on log2Foldchange rather than p-value
-# CUT=1.25
-# sig.genes1 = rownames(k2o.r)[abs(k2o.r$log2FoldChange)>log(CUT, 2)];length(sig.genes1)
-# sig.genes2 = rownames(o2k.r)[abs(o2k.r$log2FoldChange)>log(CUT, 2)];length(sig.genes2) ##increa
-# sig.genes = unique(append(sig.genes1, sig.genes2))
-# sig.genes=sig.genes[!is.na(sig.genes)]
-# length(sig.genes)
-
-
 #optionally uncomment the line below to use all genes instead of plastic genes
 # results are qualitatively similar, but less significant than when you use plastic genes
 # sig.genes=rownames(vsd)
@@ -183,17 +174,13 @@ personalized_ghosts(gbm.dapc, plot.mns=plot.mns) #for gbm
 
 ######## CONNECT DAPC RESULTS WITH PHENOTYPIC DATA ########
 #upload DAPC results from SNPs and Tag-seq
-lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.Rdata') #output from adegenet_snps.R
-# lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc_GENIC.Rdata') #optional one based only on genic SNPs (in coding regions or promoters)
+lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.ALL.Rdata') #output from adegenet_snps.R -- This one is for all SNPs. Comes from VCF file recipMeth_final_mindp5_maxMiss8_maf.2_maxNonref.8_FINAL.recode.vcf
+# lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.GENIC.Rdata') #output from adegenet_snps.R -- This one is for coding region SNPs only. Comes from file genic_SNPs_maf.2_maxNonRef.8_maxMiss.8_mindp5_FINAL.recode.vcf. Note resutls for this set of SNPs is qualitatively the same as for ALL SNP vcf.
 snp.dapc=data.frame(snp.dp$ind.coord)
 rns = sub(".fastq_Sorted.bam", "", rownames(snp.dapc))
 rownames(snp.dapc) = rns
 snp.dapc$treat=substr(rownames(snp.dapc), start=1, stop=1)
 lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc.Rdata') #output from DAPC_tagseq_transplant.R (use this one for plastic genes)
-
-# # lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc_all_genes.Rdata') #output from DAPC_tagseq_transplant.R (This one includes all genes)
-# # lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.GBMplastic.dapc.Rdata') #This one was subset for the genes that showed evidence of GBM plasticity
-
 
 
 #UPLOAD THE TRAIT DATA TO MERGE WITH MBD-SEQ RESULTS
@@ -234,7 +221,7 @@ print(traits)
 #This will serve as a summary fitness index
 head(traits)
 fit=traits[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')];REV=-1
-fit=traits[,c('CARB', 'PROTEIN', 'LIPID')];REV=1 #optionally don't include GAIN
+# fit=traits[,c('CARB', 'PROTEIN', 'LIPID')];REV=1 #optionally don't include GAIN
 rownames(fit) = traits$Colony.ID
 fit2=na.omit(fit)
 ko = grep("KO", rownames(fit2))
@@ -259,6 +246,8 @@ print(g)
 #plot with vanilla R
 plot_vanilla_pca(fit, CEX=1.5, invert=-1)
 
+
+
 ################### PLOT GHOSTS ###################
 plot.mns=F
 snp_ghosts(snp.dapc, plot.mns=plot.mns)          #for snps
@@ -270,13 +259,10 @@ personalized_ghosts(ge.dapc, plot.mns=plot.mns)  #for ge
 ################## SAVE/LOAD ##################
 setwd("~/gitreps/reciprocal_transplant_methylation/")
 
-# save.image("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata") #DAPC_plastic_gbm3.Rdata is the final version as of BioRchiv submission. Includes SNP data from A.dig reference using mpileup filename=recipMeth_final_mindp5_maxMiss8.recode.vcf. Note these are not saved in the git repository because of size.
+#save.image("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata") #DAPC_plastic_gbm3.Rdata is the final version as of BioRchiv submission. DAPC_plastic_gbm4.Rdata is the revised version for the Molecular Ecology submission.
 
-# save.image("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_gbm4.Rdata") #same version but for all genes rather than just those showing GBM plasticity
-
-load("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata")
+load("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata") #note this is kept separate because file is too large for github.
 source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
-
 
 
 #GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR SNP DATA
@@ -347,51 +333,57 @@ pok$z=zscore(pok$acclim)*-1
 pre.clim.ge=rbind(pko, pok)
 
 
-
-
+#Check if DAPC 'similarity' values from different datasets are correlated
+#(None are)
 
 #CORRELATE ACCLIMIZATION MEASURES FOR GBM AND TRANSCRIPTION
 mclim=merge(clim.gbm, clim.ge, by = 'Colony.ID', all.x=F, all.y=F)
-plot(mclim$z.x~mclim$z.y)
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat.x))
 lm1=lm(mclim$z.x~mclim$z.y)
-summary(lm1)
+summary(lm1) #No relationship
 abline(lm1)
 
 #CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA
 mclim=merge(clim.gbm, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)
-plot(mclim$z.x~mclim$z.y)
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat.x))
 lm1=lm(mclim$z.x~mclim$z.y)
-summary(lm1)
+summary(lm1) #No relationship
+abline(lm1)
+
+#PLOT CORRELATION GBM AND SNP PCA DATA
+head(snp.pca)
+rownames(snp.pca) = sub('.fastq_Sorted.bam', '', rownames(snp.pca))
+snp.pca$geno = rownames(snp.pca)
+m = merge(pre.clim, snp.pca, by = 'geno')
+plot(m$z~m$PC2, pch=21, bg=get.cols(m$treat))
+plot(m$PC2~m$PC1, pch=21, bg=get.cols(m$treat))
+mns=tapply(m$PC2, INDEX=m$treat, mean)
+abline(h=mns["KO"], col=get.cols(c("KO")))
+abline(h=mns["OK"], col=get.cols(c("OK")))
+target=m$treat
+target[target =='KO']<-mns['OK']
+target[target =='OK']<-mns['KO']
+m$target=as.numeric(target)
+m$diff = abs(m$PC2 - m$target)
+plot(m$z~m$diff, pch=21, bg = get.cols(m$treat))
+lm1= lm(m$z~m$diff)
+summary(lm1) #No Relationship
 abline(lm1)
 
 
 #CORRELATE ACCLIMIZATION MEASURES FOR GE AND SNP DATA
 mclim=merge(clim.ge, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)
-plot(mclim$z.x~mclim$z.y)
+plot(mclim$z.x~mclim$z.y, , pch=21, bg = get.cols(m$treat))
 lm1=lm(mclim$z.x~mclim$z.y)
-summary(lm1)
+summary(lm1) #No Relationship
 abline(lm1)
 
 
 
 
-#PLOT RESULTS
-#pick the dataset
-clim.df = clim.snp
-clim.df = clim.gbm
-clim.df = clim.ge
-clim.df=pre.clim
-
-
-
-#plot
-XLAB = 'GBM Similarity'
-XLAB = 'GBM Clone-similarity'
-XLAB = 'SNP Similarity'
-XLAB = 'GE Similarity'
-
-
 #---------- PLOT FITNESS PROXY PC1 -----------#
+#here plot relatinoship between GBM DAPC values and fitness index (PCA above)
+#plot with 'crossway' plots and with 'similarity' plots that give them same slope
 plot.subs=F
 rsCEX = 1
 yl="Fitness Proxy PC1"
@@ -495,13 +487,22 @@ plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="
 
 
 
+#-------- PLOT FOR OTHER DATASETS ---------#
+
+#PLOT RESULTS
+#pick the dataset
+clim.df = clim.snp
+clim.df = clim.gbm
+clim.df = clim.ge
+clim.df=pre.clim
 
 
 
-
-
-
-
+#plot
+XLAB = 'GBM Similarity'
+XLAB = 'GBM Clone-similarity'
+XLAB = 'SNP Similarity'
+XLAB = 'GE Similarity'
 
 
 quartz()
@@ -515,16 +516,34 @@ plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLA
 plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")
 plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
 s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
-text(x=-1.2, y=0.25, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=0.75, col=color.set[2])  #for GBM similarity
-text(x=1.1, y=-0.25, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=0.75, col=color.set[3])    #for GBM similarity
 
 
-s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
-text(x=1.5, y=-1.5, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=0.75, col=color.set[2])  #for clone GBM similarity
-text(x=-1, y=2.3, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=0.75, col=color.set[3])    #for clone GBM similarity
-par(mfrow=c(1,1))
-#plot legend
-plot.new(); legend('center', c('KO','OK'), pt.bg=c(color.set[2], color.set[3]), pch=21, pt.cex=1.5, inset=c(0,-.3), xpd=T)
+#plot ZOOX relationships
+library(plotrix)
+head(traits)
+xcol = 'snp.ld1'
+ycol = 'ZOOX'
+#similarity crossed way
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = T, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)", XLIM=c(-5, 5))
+text(x=-2, y=1.2, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=rsCEX, col=color.set[2])  #for clone GBM similarity
+text(x=0.3, y=2.8, labels=paste("R2 =", paste(s[2,2], "&", sep='')), cex= rsCEX, col=color.set[3])    #for clone GBM
+head(traits)
+zdat = traits[!is.na(traits$ZOOX),c('ZOOX','treat', 'gbm.ld1', 'snp.ld1')]
+treatMns = tapply(zdat$ZOOX, INDEX=zdat$treat, mean)
+treatSes = tapply(zdat$ZOOX, INDEX=zdat$treat, std.error)
+x=c(1:length(treatMns))
+my_boxplot(zdat, 'ZOOX', "treat", YLAB="Symbionts. (cells/ul)")
+
+
+df=zdat
+ycol='ZOOX'
+index='treat'
+YLAB="Symbionts. (cells/ul)"
+mn.gbm = tapply(zdat$gbm.ld1, INDEX=zdat$treat, mean)
+mn.snp = tapply(zdat$gbm.ld1, INDEX=zdat$treat, mean)
+plot(zdat$ZOOX~zdat$gbm.ld1, pch=21, bg=get.cols(zdat$treat))
+plot(zdat$ZOOX~zdat$snp.ld1, pch=21, bg=get.cols(zdat$treat))
+
 
 
 ######## CORRELATION BETWEEN DAPC COORDINATES AND FITNESS PROXIES ######## 

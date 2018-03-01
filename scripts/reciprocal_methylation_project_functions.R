@@ -20,14 +20,13 @@ volcano_plot = function(dat, pcol='pvalue', log2col='log2FoldChange', fdrcol='pa
 
 
 
-my_boxplot = function(df, xcol, index, YLAB='Match'){
-	b=boxplot(df[,xcol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
+my_boxplot = function(df, ycol, index, YLAB='Match'){
+	df[,index] = as.factor(df[,index])
+	b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
 	colors =get.cols(df[,'treat'])
-	uni.treats = unique(df[,'treat'])
-	xs=df[,'treat']
-	xs[xs==uni.treats[1]]<-1
-	xs[xs==uni.treats[2]]<-2
-	points(df[,xcol]~jitter(as.numeric(xs)), pch=21, bg=colors, cex=1.5)
+	uni.treats = as.factor(unique(df[,'treat']))
+	xs=as.numeric(as.factor(df[,index]))
+	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)
 }
 
 
@@ -560,16 +559,16 @@ plot_sub_lm = function(df, fit.proxy, ld.col, sub.treatment, color, CEX=2, LWD=3
 	
 }
 
-plot_ld_fitness2= function(traits, fit.proxy, ld.col, legend.pos='topright', plot.natives = T, YLAB=fit.proxy, XLAB=ld.col, YLIM=NULL){
+plot_ld_fitness2= function(traits, fit.proxy, ld.col, legend.pos='topright', plot.natives = T, YLAB=fit.proxy, XLAB=ld.col, YLIM=NULL, XLIM=NULL){
 	if (plot.natives){
-		plot(traits[,fit.proxy]~traits[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)
+		plot(traits[,fit.proxy]~traits[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM, xlim=XLIM)
 		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)
 		kk=plot_sub_lm(traits, fit.proxy, ld.col, "KK", color.set[1], LINE=F, CEX=.8)
 		oo=plot_sub_lm(traits, fit.proxy, ld.col, "OO", color.set[4], LINE=F, CEX=.8)
 	}
 	else{
 		sub=rbind(traits[traits$treat=="KO",], traits[traits$treat=="OK",])
-		plot(sub[,fit.proxy]~ sub[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)
+		plot(sub[,fit.proxy]~ sub[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM, xlim=XLIM)
 		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)
 	}
 	ko=plot_sub_lm(traits, fit.proxy, ld.col, "KO", color=color.set[2], line.col='deepskyblue3')
