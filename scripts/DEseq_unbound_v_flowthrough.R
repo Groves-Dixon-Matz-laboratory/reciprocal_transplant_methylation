@@ -16,7 +16,8 @@ directory<-"~/gitreps/reciprocal_transplant_methylation/"
 setwd(directory)
 
 #READ IN THE COUNTS DATA. THESE ARE EXPORTED AT THE END OF THE MBD-seq data processing pipeline (see MBD-# seq_Data_Processing_Walkthrough).
-counts=read.table('datasets/promoter_gbm_counts_p-1000_200.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #small promo
+counts=read.table('datasets/promoter_gbm_counts_p-1000_200.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #counts on just CDS regions with promoter regions excluded
+counts=read.table('datasets/GENE_counts_3-6-18.tsv',header=TRUE,row.names=1,sep="\t"); head(counts)  #counts to full annotated gene regions
 head(counts)
 dim(counts)
 
@@ -145,6 +146,7 @@ lnames = load('datasets/capturedVflowthroughResults_p-1000_200.Rdata')
 #--------- plot figure 1 ---------------
 
 #UPLOAD CPG DATA AND MERGE WITH MBD-SCORES
+library(scales)
 cdat = read.table("datasets/digitifera_rna_cpg_data.tsv", header = T) #estimated based on coding regions (see Adigitifera_annotations.txt)
 cdat$cpgOE = (cdat$CpG/(cdat$C*cdat$G))*(cdat$length^2/(cdat$length-1))##equation in Gavery and Roberts (oysters)
 colnames(cdat)[1]<-'genbank'
@@ -176,7 +178,7 @@ adj = .95
 alpha = 0.05
 
 #plot distribution
-par(mfrow = c(1,1))
+par(mfrow = c(1,2))
 x = hist(res$log2FoldChange, breaks = 70, xlim = c(-7, 7),main = "", xlab = 'MBD-score', mgp=MGP)
 # mtext('A', side = 3, line = 0, adj = 0, cex = 1.5)
 

@@ -49,21 +49,16 @@ vcftools --vcf plinkVcf.recode.vcf --plink --out pedfile
 
 
 
+#------------ split and run based on individual transplants ---------------
+grep "^K" fitpc1.phe > transO.phe
+grep "^O" fitpc1.phe > transK.phe
+cut -f 1 transO.phe > transO.txt
+cut -f 1 transK.phe > transK.txt
+vcftools --vcf recipMeth_maf.2_mindp5_maxmiss.8_hetexess.8.recode_scaffReplaced.vcf --keep transO.txt --recode --out transOplinkVcf
+vcftools --vcf recipMeth_maf.2_mindp5_maxmiss.8_hetexess.8.recode_scaffReplaced.vcf --keep transK.txt --recode --out transKplinkVcf
+vcftools --vcf transOplinkVcf.recode.vcf --plink --out transO
+vcftools --vcf transKplinkVcf.recode.vcf --plink --out transK
 
-
-
-
-#run associations with sex
->assoc;for file in *pun.ped; do echo "plink --file ${file/.ped/} --pheno pun_pheno.txt --assoc --out ${file/.ped/} --noweb" >> assoc;done
-for file in *sin.ped; do echo "plink --file ${file/.ped/} --pheno sin_pheno.txt --assoc --out ${file/.ped/} --noweb" >> assoc;done
-for file in *tym.ped; do echo "plink --file ${file/.ped/} --pheno tym_pheno.txt --assoc --out ${file/.ped/} --noweb" >> assoc;done
-
-launcher_creator.py -n assoc -j assoc -q normal -t 1:00:00 -a $allok -e $email -N 1 -w 24
-sbatch assoc.slurm
-
-
-#plot the results for each chromosome on TACC with chrom_plink_plot_TACC.R
-#note change 2nd argument to "yes" to plot the loess line, but it takes a long time
->plot_assoc; for file in *.assoc; do echo "chrom_plink_plot_TACC.R $file no" >> plot_assoc;done
-launcher_creator.py -n plot_assoc -j plot_assoc -q normal -t 00:30:00 -a $allok -e $email -N 1 -w 48
-sbatch plot_assoc.slurm
+#run plink
+/work/02260/grovesd/lonestar/plink-1.07-i686/plink --file transO --pheno transO.phe --linear --out transO --noweb
+/work/02260/grovesd/lonestar/plink-1.07-i686/plink --file transK --pheno transK.phe --linear --out transK --noweb

@@ -88,6 +88,11 @@ for (g in trans.genes){
 	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')
 }
 
+#make a legend
+plot.new()
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Origin")
+plot.new()
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Transplantation Site")
 
 #---------- TEST CORRELATION BETWEEN DIFFERENCE IN MEAN MBD-SEQ COUNT AND BISULFITE METH PCT ----------#
 

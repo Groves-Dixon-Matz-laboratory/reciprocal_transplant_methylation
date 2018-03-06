@@ -22,8 +22,9 @@ volcano_plot = function(dat, pcol='pvalue', log2col='log2FoldChange', fdrcol='pa
 
 my_boxplot = function(df, ycol, index, YLAB='Match'){
 	df[,index] = as.factor(df[,index])
+	# levels(df[,index]) = c("KK", "OK", "KO", "OO")
 	b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
-	colors =get.cols(df[,'treat'])
+	colors =get.cols(as.character(df[,'treat']))
 	uni.treats = as.factor(unique(df[,'treat']))
 	xs=as.numeric(as.factor(df[,index]))
 	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)

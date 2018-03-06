@@ -1,27 +1,748 @@
-#set working dir#
+.5^3
+### SETUP #####
+library(adegenet)#
+setwd("~/gitreps/reciprocal_transplant_methylation/")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")#
+##### UPLOAD DATA #####
+#DEseq results for GBM#
+ll=load("datasets/splitModels_MBD.RData")#
+ll=load("datasets/mbd_3mo.RData")#
+head(k2o.r)#
+head(o2k.r)#
+#Dataset including incomplete data for 6-month samples (not used in analysis)#
+# lnames=load("mbd_3_and_6mo.RData")#
+# # vsd.6mo=vsd[,grep("_3m", colnames(vsd))]#
+# vsd.3mo=vsd[,grep("_2m", colnames(vsd))]#
+# # head(vsd.6mo)#
+# head(vsd.3mo)#
+# # dim(vsd.6mo)#
+# dim(vsd.3mo)#
+######## BUILD VOLCANO PLOTS #########
+#these illustrate differential methylation within populations due to transplantation#
+par(mfrow=c(1,1))#
+YLIM=c(0,16)#
+volcano_plot(k2o.r, XLIM=c(-1.5, 1.5), YLIM=YLIM, MAIN='KK vs KO', draw.box=F) #KK vs KO test#
+volcano_plot(o2k.r, XLIM=c(-1.5, 1.5), YLIM=YLIM, MAIN='OO vs OK', draw.box=F) #OO vs OK test#
+par(mfrow=c(1,1))#
+#
+######## SUBSET FOR GENES SHOWING EVIDENCE OF METHYLATION PLASTICITY #########
+#
+#assign plastic genes#
+CUT=0.01#
+sig.genes1 = rownames(k2o.r)[k2o.r$pvalue<CUT];length(sig.genes1)#
+sig.genes2 = rownames(o2k.r)[o2k.r$pvalue<CUT];length(sig.genes2) ##increa#
+sig.genes = unique(append(sig.genes1, sig.genes2))#
+sig.genes=sig.genes[!is.na(sig.genes)]#
+length(sig.genes)#
+save(sig.genes, file="datasets/plasticGBMgenes.Rdata")#
+#
+#optionally uncomment the line below to use all genes instead of plastic genes#
+# results are qualitatively similar, but less significant than when you use plastic genes#
+# sig.genes=rownames(vsd)#
+#subset the variance stabilized counts#
+vsds=vsd[sig.genes,]#
+coo=conditions#
+degs10<-rownames(vsds)#
+# vsds.6mo=vsds[,grep("_3m", colnames(vsd))]#
+# vsds=vsds[,grep("_2m", colnames(vsd))]#
+#560 genes with gbM plasticity#
+# head(vsds.6mo)#
+head(vsds)#
+# dim(vsds.6mo)#
+dim(vsds)#
+#
+######## LOOK AT ABSOLUTE LEVELS OF METHYLATION FOR GENE SUBSETS #########
+#absolute methylation ()#
+sig.genes1.o = rownames(okatk.r)[okatk.r$pvalue<CUT];length(sig.genes1)#
+sig.genes2.o = rownames(okato.r)[okato.r$pvalue<CUT];length(sig.genes2)#
+sig.genes.o = unique(append(sig.genes1.o, sig.genes2.o))#
+sig.genes.o=sig.genes.o[!is.na(sig.genes.o)]#
+length(sig.genes.o)#
+#
+par(mfrow=c(1,2))#
+plot_subset_mbd_density(sig.genes,'red', YLIM=c(0, 0.3), MAIN = 'Site-specific\nn=560')#
+legend('topright', c('All genes', 'Site-specific'), col=c('black', 'red'), lwd=2)#
+plot_subset_mbd_density(sig.genes.o,'red', YLIM=c(0, 0.3), MAIN = 'Origin-specific\nn=316')#
+legend('topright', c('All genes', 'Origin-specific'), col=c('black', 'red'), lwd=2)#
+######## OUTPUT THE SUBSET OF GENES FOR GO ENRICHMENT #########
+# lnames=load("~/gitreps/reciprocal_transplant_methylation/datasets/ProteinTable.Rdata")#
+# head(ptable)#
+# x=data.frame(rownames(vsd), 0)#
+# colnames(x) = c('locusName', 'sig')#
+# x$sig[x$locusName %in% sig.genes]<-1#
+# sum(x$sig) == length(sig.genes)#
+# y=merge(x,ptable, by='locusName', all.x=T, all.y=F)#
+# dim(y)#
+# head(y)#
+# out=na.omit(data.frame(y$genbank.prot, y$sig))#
+# colnames(out) = c('prot', 'sig')#
+# head(out)#
+# sum(out$sig) == length(sig.genes)#
+# write.csv(out, file='~/gitreps/reciprocal_transplant_methylation/go_mwu/plastic_meth_genes.csv', row.names=F, quote=F)#
+######## SET SPLIT DATASTS FOR NATIVE CORALS AND TRANSPLANTED CORALS #########
+a.vsd<-vsds[,c(grep("OO",colnames(vsds)), grep("KK",colnames(vsds)))]     #'home' corals. Will disciminate between these two#
+a.vsd.supp<-vsds[,c(grep("OK",colnames(vsds)),grep("KO",colnames(vsds)))] #transplanted corals#
+head(a.vsd)#
+head(a.vsd.supp)#
+######## PREPARE DATA FOR DAPC #########
+pcp=prcomp(t(a.vsd[degs10,]), retx=TRUE, center=TRUE, scale=TRUE)#
+scores=pcp$x#
+screeplot(pcp,bstick=T) # only 1st PC is non-random when using diff exp genes only; higher PCs non-random when using all data...#
+#
+# adegenet: finding clusters (even though we know what clusters we want) - choose 4 PCs and 2 groups#
+clus=find.clusters(t(a.vsd[degs10,]),max.n.clus=15, n.clust=2, n.pca=4) #[degs10,]#
+#Use clus$grp to rename#
+colnames(a.vsd) #
+clus$grp=c(substr(colnames(a.vsd), start=1,stop=2)) #set the transplantation site as the groups#
+######## BUILD DISCIMINATE FUNCTION #########
+#discriminate between KK and OO#
+#keep 1 discriminate function#
+#use PCs to account for 80% of var#
+#This sets up the axis describing #
+#'Native Keppel-like' and 'Native Orpheus-like' GBM patterns#
+dp=dapc(t(a.vsd[degs10,]),clus$grp, n.da=1, perc.pca=80)#
+#plot distributions#
+quartz()#
+scatter(dp,bg="white",scree.da=FALSE,legend=TRUE,solid=.4)#
+######## APPLY DISCIMINATE FUNCTION TO TRANSPLANTED SAMPLES #########
+pred.sup<-predict.dapc(dp,newdata=(t(a.vsd.supp[degs10,]))) #
+#
+names(pred.sup)#
+pred.sup$assign#
+colnames(a.vsd.supp)#
+#
+#create another dataframe in order to plot these predicted values#
+test<-dp#
+test$ind.coord<-pred.sup$ind.scores#
+test$posterior<-pred.sup$posterior#
+test$assign<-pred.sup$assign#
+test$grp<-as.factor(substr(colnames(a.vsd.supp), start =1, stop=2))#
+#
+#Plot the distributions of the transplant samples along the disciminant axis#
+quartz()#
+scatter(test,bg="white",scree.da=FALSE,legend=TRUE,solid=.4,ylim=c(0,0.6),xlim=c(-4,4)) #
+#adjust axes to correspond to previous graph, then overlay plots in photoshop#
+#apply the disciminate function to all datasets at once#
+pred.sup<-predict.dapc(dp,newdata=(t(vsds[degs10,])), var.contrib=T)#
+gbm.dapc=data.frame(pred.sup$ind.scores)#
+gbm.dapc$treat=substr(rownames(gbm.dapc), start=1, stop=2)#
+rownames(gbm.dapc) = sub("_2m", "", rownames(gbm.dapc)) #remove '_2m' from rownames#
+mns=tapply(gbm.dapc$LD1, gbm.dapc$treat, mean)#
+#look at results#
+library(scales)#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")#
+plot.mns=F#
+personalized_ghosts(gbm.dapc, plot.mns=plot.mns) #for gbm
+#### CONNECT DAPC RESULTS WITH PHENOTYPIC DATA #########
+#upload DAPC results from SNPs and Tag-seq#
+lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.ALL.Rdata') #output from adegenet_snps.R -- This one is for all SNPs#
+# lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/snp.dapc.GENIC.Rdata') #output from adegenet_snps.R -- This one is for coding region SNPs only#
+snp.dapc=data.frame(snp.dp$ind.coord)#
+rns = sub(".fastq_Sorted.bam", "", rownames(snp.dapc))#
+rownames(snp.dapc) = rns#
+snp.dapc$treat=substr(rownames(snp.dapc), start=1, stop=1)#
+lnames=load('~/gitreps/reciprocal_transplant_methylation/datasets/ge.dapc.Rdata') #output from DAPC_tagseq_transplant.R (use this one for plastic genes)#
+#UPLOAD THE TRAIT DATA TO MERGE WITH MBD-SEQ RESULTS#
+lnames=load('datasets/bayRT_rlog_conditions_traits.RData')#
+traits$treat=paste(traits$ori, traits$tra, sep='')#
+traits$geno=paste(traits$ori, traits$num, sep='')#
+head(traits)
+#REMOVE SINGLE WEIRD LIPID MEASURE#
+hist(traits$LIPID)#
+traits[traits$Colony.ID=='KO12' ,'LIPID']<-NA#
+#ADD DAPC RESULTS TO TRAITS DATA#
+#for snp data#
+x=data.frame(paste(traits$ori, traits$num, sep=''), traits$Colony.ID);colnames(x)=c('geno', 'Colony.ID');head(x)#
+snp.dapc$geno=rownames(snp.dapc)#
+m=merge(x, snp.dapc, by='geno', all.x=T)#
+m=m[order(m$Colony.ID),]#
+sum(m$geno==traits$geno) == nrow(traits)#
+traits$snp.ld1=m$LD1
+#for gbm and ge data#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")#
+traits$gbm.ld1=order_ld(gbm.dapc)#
+traits$ge.ld1=order_ld(ge.dapc)#
+#
+#traits dataframe now has DAPC results from SNPs, GBM, and transcription data#
+print(traits)
+######## GET FITNESS FIRST PC ##############
+#run principal component analysis on four fitness traits#
+#that have sufficient number of samples represented.#
+#This will serve as a summary fitness index#
+head(traits)#
+fit=traits[,c('CARB', 'PROTEIN', 'LIPID', 'GAIN')];REV=-1#
+# fit=traits[,c('CARB', 'PROTEIN', 'LIPID')];REV=1 #optionally don't include GAIN#
+rownames(fit) = traits$Colony.ID#
+fit2=na.omit(fit)#
+ko = grep("KO", rownames(fit2))#
+ok = grep("OK", rownames(fit2))#
+fit=fit2[c(ko,ok),]#
+fitpc=prcomp(fit, retx=TRUE, center=TRUE, scale=TRUE)#
+scores= fitpc$x#
+fitpc1 = data.frame(rownames(scores), scores[,1])#
+colnames(fitpc1) = c('Colony.ID', 'fitpc1')#
+x=merge(traits, fitpc1, by = 'Colony.ID', all.x=T)#
+sum(x$Colony.ID==traits$Colony.ID) == nrow(traits)#
+traits$fitpc1=x$fitpc1*REV#
+#
+#plot with ggbiplot#
+library(ggbiplot)#
+g <- ggbiplot(fitpc, choices = 1:2, obs.scale = 1, var.scale = 1, ellipse = T, varname.size = 4)#
+colors=get.cols(substr(rownames(fitpc$x), start=1, stop=2))#
+g <- g + geom_point(color=colors, size=3)#
+g <- g + theme(legend.position="top")#
+print(g)#
+#
+#plot with vanilla R#
+plot_vanilla_pca(fit, CEX=1.5, invert=-1)
+########### PLOT GHOSTS ####################
+plot.mns=F#
+snp_ghosts(snp.dapc, plot.mns=plot.mns)          #for snps
+save.image("/Users/grovesdixon/lab_files/projects/recip_meth/large_files/DAPC_plastic_gbm4.Rdata") #DAPC_plastic_gbm3.Rdata is the final version as of BioRchiv submission. Includes SNP data from A.dig reference using mpileup filename=recipMeth_final_mindp5_maxMiss8.recode.vcf. Note these are not saved in the git repository because of size.
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")
+#GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR SNP DATA#
+#(the inverse difference in dapc coordinate for transplants and#
+# the mean for home corals from the site they were transplanted to)#
+x= get_ld_diffs(traits, ld.col='snp.ld1', geno1='OO', geno2='KO')#
+y=get_ld_diffs(traits, ld.col='snp.ld1', geno1='KK', geno2='OK')#
+clim.snp=rbind(x,y)#
+clim.snp$z=zscore(clim.snp$acclim)*-1#
+#GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR GBM DATA#
+#(the inverse difference in dapc coordinate for transplants and#
+# the mean for home corals from the site they were transplanted to)#
+x= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='OO', geno2='KO')#
+y=get_ld_diffs(traits, ld.col='gbm.ld1', geno1='KK', geno2='OK')#
+clim.gbm=rbind(x,y)#
+clim.gbm$z=zscore(clim.gbm$acclim)*-1#
+#GATHER ACCLIMITIZATION ("SIMILARITY") DATA FOR GE DATA#
+#(the inverse difference in dapc coordinate for transplants and#
+# the mean for home corals from the site they were transplanted to)#
+x= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KO')#
+y=get_ld_diffs(traits, ld.col='ge.ld1', geno1='KK', geno2='OK')#
+clim.ge=rbind(x,y)#
+clim.ge$z=zscore(clim.ge$acclim)*-1#
+#GATHER PRE-ACCLIMITIZATION ("PRE-SIMILARITY") DATA FOR GBM DATA#
+#here look at how close the clone pair was to the alternative home mean#
+#this will help address whether already being closer to target methylome#
+#correlates with fitness proxies, or #
+#for KO samples#
+preko= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='OO', geno2='KK')#
+preko = preko[,c('geno', 'acclim')]#
+ko=traits[traits$treat=='KO',]#
+pko=merge(preko,ko, by = 'geno', all.x=T, all.y=F)#
+pko$z=zscore(pko$acclim)*-1#
+#
+#for OK samples#
+preok= get_ld_diffs(traits, ld.col='gbm.ld1', geno1='KK', geno2='OO')#
+preok = preok[,c('geno', 'acclim')]#
+ok=traits[traits$treat=='OK',]#
+pok=merge(preok,ok, by = 'geno', all.x=T, all.y=F)#
+pok$z=zscore(pok$acclim)*-1#
+pre.clim=rbind(pko, pok)#
+#GATHER PRE-ACCLIMITIZATION DATA FOR GE DATA#
+#here look at how close the clone pair was to the alternative home mean#
+#this will help address whether already being closer to target methylome#
+#correlates with fitness proxies, or #
+#for KO samples#
+preko= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KK')#
+preko = preko[,c('geno', 'acclim')]#
+ko=traits[traits$treat=='KO',]#
+pko=merge(preko,ko, by = 'geno', all.x=T, all.y=F)#
+pko$z=zscore(pko$acclim)*-1#
+#
+#for OK samples#
+preok= get_ld_diffs(traits, ld.col='ge.ld1', geno1='KK', geno2='OO')#
+preok = preok[,c('geno', 'acclim')]#
+ok=traits[traits$treat=='OK',]#
+pok=merge(preok,ok, by = 'geno', all.x=T, all.y=F)#
+pok$z=zscore(pok$acclim)*-1#
+pre.clim.ge=rbind(pko, pok)#
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND TRANSCRIPTION#
+mclim=merge(clim.gbm, clim.ge, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y)#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)#
+#
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA#
+mclim=merge(clim.gbm, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y)#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)
+preko= get_ld_diffs(traits, ld.col='ge.ld1', geno1='OO', geno2='KK')#
+preko = preko[,c('geno', 'acclim')]#
+ko=traits[traits$treat=='KO',]#
+pko=merge(preko,ko, by = 'geno', all.x=T, all.y=F)#
+pko$z=zscore(pko$acclim)*-1
+#for OK samples#
+preok= get_ld_diffs(traits, ld.col='ge.ld1', geno1='KK', geno2='OO')#
+preok = preok[,c('geno', 'acclim')]#
+ok=traits[traits$treat=='OK',]#
+pok=merge(preok,ok, by = 'geno', all.x=T, all.y=F)#
+pok$z=zscore(pok$acclim)*-1#
+pre.clim.ge=rbind(pko, pok)
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat))
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat))
+mclim
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat.x))
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA#
+mclim=merge(clim.gbm, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat.x))
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)
+#CORRELATE ACCLIMIZATION MEASURES FOR GBM AND SNP DATA#
+mclim=merge(clim.gbm, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y, pch=21, bg = get.cols(mclim$treat.x))#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1) #Not Significant#
+abline(lm1)
+#PLOT CORRELATION GBM AND SNP PCA DATA#
+head(snp.pca)#
+rownames(snp.pca) = sub('.fastq_Sorted.bam', '', rownames(snp.pca))#
+snp.pca$geno = rownames(snp.pca)#
+m = merge(pre.clim, snp.pca, by = 'geno')#
+plot(m$z~m$PC2, pch=21, bg=get.cols(m$treat))#
+plot(m$PC2~m$PC1, pch=21, bg=get.cols(m$treat))#
+mns=tapply(m$PC2, INDEX=m$treat, mean)#
+abline(h=mns["KO"], col=get.cols(c("KO")))#
+abline(h=mns["OK"], col=get.cols(c("OK")))#
+target=m$treat#
+target[target =='KO']<-mns['OK']#
+target[target =='OK']<-mns['KO']#
+m$target=as.numeric(target)#
+m$diff = abs(m$PC2 - m$target)#
+plot(m$z~m$diff, pch=21, bg = get.cols(m$treat))
+lm1= lm(m$z~m$diff)#
+summary(lm1)#
+abline(lm1)
+#CORRELATE ACCLIMIZATION MEASURES FOR GE AND SNP DATA#
+mclim=merge(clim.ge, clim.snp, by = 'Colony.ID', all.x=F, all.y=F)#
+plot(mclim$z.x~mclim$z.y, , pch=21, bg = get.cols(m$treat))#
+lm1=lm(mclim$z.x~mclim$z.y)#
+summary(lm1)#
+abline(lm1)
+#---------- PLOT FITNESS PROXY PC1 -----------##
+plot.subs=F#
+rsCEX = 1#
+yl="Fitness Proxy PC1"#
+dsXLAB="DAPC"#
+cloneds="Native Clone's DAPC"#
+cloneXLAB = "Native Clone's Similarity"#
+#
+XLAB = "Similarity"#
+#similarity crossed way#
+s=plot_ld_fitness2(traits, 'fitpc1', ld.col= 'gbm.ld1', plot.natives = F, XLAB= dsXLAB, YLAB= yl)#
+text(x=-2, y=1.2, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=rsCEX, col=color.set[2])  #for clone GBM similarity#
+text(x=0.3, y=2.8, labels=paste("R2 =", paste(s[2,2], "&", sep='')), cex= rsCEX, col=color.set[3])    #for clone GBM similarity
+s
+#similarity combined#
+clim.df = clim.gbm#
+s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB= yl)
+#clone similarity crossed way#
+s=plot_swapped_ld_fitness(traits, 'fitpc1', ld.col='gbm.ld1', legend.pos=F, XLAB= cloneds, YLAB= yl)#
+text(x=-2, y=1.5, labels=paste("R2 =", paste(s[1,2], "&", sep='')), cex=rsCEX, col=color.set[2]) #
+text(x=1, y=-1, labels=paste("R2 =", paste(s[2,2], "***", sep='')), cex=rsCEX, col=color.set[3])  #
+plot_acclim_fitness(pre.clim, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB= yl)
+s=plot_swapped_ld_fitness(traits, 'fitpc1', ld.col='gbm.ld1', legend.pos=F, XLAB= cloneds, YLAB= yl)
+text(x=-2, y=1.5, labels=paste("R2 =", paste(s[1,2], "&", sep='')), cex=rsCEX, col=color.set[2]) #
+text(x=1, y=-1, labels=paste("R2 =", paste(s[2,2], "***", sep='')), cex=rsCEX, col=color.set[3])
+plot_acclim_fitness(pre.clim, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB= yl)
+#---------- PLOT FITNESS PROXIES INDIVIDUALLY BOTH WAYS -----------##
+####### For similarity#
+par(mfrow=c(5,2))#
+ld.col='gbm.ld1'#
+clim.df = clim.gbm#
+dlXLAB='DACPC'#
+plot.subs=F#
+#gain#
+yl=c(0.05, 0.43)#
+s=plot_ld_fitness2(traits, 'GAIN', ld.col= ld.col, XLAB= dlXLAB, YLAB='Weight Gain (%)', YLIM=yl)#
+text(x=0, y=0.28, labels=paste("R2 =", paste(s[3,2], "**", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=0.24, labels=paste("R2 =", paste(s[4,2], "**", sep='')), cex=1, col=color.set[3])    #
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)', YLIM=yl)#
+#carb#
+yl=c(0.07, 0.21)#
+s=plot_ld_fitness2(traits, 'CARB', ld.col= ld.col, XLAB= dlXLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)#
+text(x=0, y=0.10, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=0.20, labels=paste("R2 =", paste(s[4,2], "n/s", sep='')), cex=1, col=color.set[3])    #
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)#
+#protein#
+yl=c(1, 13)#
+s=plot_ld_fitness2(traits, 'PROTEIN', ld.col= ld.col, XLAB= dlXLAB, YLAB="Protein (mg/cm2)", YLIM=yl); print(s)#
+text(x=-2, y=10, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=8, labels=paste("R2 =", paste(s[4,2], "n/s", sep='')), cex=1, col=color.set[3])   #
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)", YLIM=yl)#
+#lipid#
+s=plot_ld_fitness2(traits, 'LIPID', ld.col= ld.col, XLAB=dlXLAB, YLAB="Lipid. (mg/cm2)");print(s)#
+text(x=-2, y=0.03, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=0.18, labels=paste("R2 =", paste(s[4,2], "&", sep='')), cex=1, col=color.set[3]) #
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")#
+#zoox#
+s=plot_ld_fitness2(traits, 'ZOOX', ld.col= ld.col, XLAB=dlXLAB, YLAB="Symbionts. (cells/ul)"); print(s)#
+text(x=-2, y=2.2e5, labels=paste("R2 =", paste(s[3,2], "n/s", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=11e5, labels=paste("R2 =", paste(s[4,2], "n/s", sep='')), cex=1, col=color.set[3])  #
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")
+#### For native clone values#
+par(mfrow=c(5,2))#
+ld.col='gbm.ld1'#
+clim.df = pre.clim#
+cloneds="Native Clone's DAPC"#
+cloneXLAB = "Native Clone's Similarity"#
+plot.subs=F#
+#
+#gain#
+yl=c(0.05, 0.43)#
+s=plot_swapped_ld_fitness(traits, 'GAIN', ld.col= ld.col, YLIM=yl, XLAB= cloneds)#
+text(x=-2, y=0.28, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=0.24, labels=paste("R2 =", paste(s[2,2], "*", sep='')), cex=1, col=color.set[3])    #
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB= cloneXLAB, YLAB='Weight Gain (%)', YLIM=yl)#
+#carb#
+yl=c(0.07, 0.21)#
+s=plot_swapped_ld_fitness(traits, 'CARB', ld.col= ld.col, YLIM=yl, XLAB=cloneds)#
+text(x=-2, y=0.18, labels=paste("R2 =", paste(s[1,2], "&", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=0.09, labels=paste("R2 =", paste(s[2,2], "n/s", sep='')), cex=1, col=color.set[3])  #
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB= cloneXLAB, YLAB="Carb. (mg/cm2)", YLIM=yl)#
+#protein#
+yl=c(1, 13)#
+s=plot_swapped_ld_fitness(traits, 'PROTEIN', ld.col= ld.col, legend.pos=F, YLIM=yl, XLAB=cloneds)#
+text(x=-2, y=8, labels=paste("R2 =", paste(s[1,2], "***", sep='')), cex=1, col=color.set[2]) #
+text(x=0, y=10, labels=paste("R2 =", paste(s[2,2], "**", sep='')), cex=1, col=color.set[3])  #
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB="Protein (mg/cm2)", YLIM=yl)#
+#lipid#
+yl=c(0, 0.26)#
+s=plot_swapped_ld_fitness(traits, 'LIPID', ld.col= ld.col, legend.pos=F, YLIM=yl, XLAB=cloneds)#
+text(x=-2, y=0.03, labels=paste("R2 =", paste(s[1,2], "*", sep='')), cex=1, col=color.set[2]) #
+text(x=.5, y=0.15, labels=paste("R2 =", paste(s[2,2], "**", sep='')), cex=1, col=color.set[3])  #
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=cloneXLAB, YLAB="Protein (mg/cm2)", YLIM=yl)#
+#zoox#
+yl=c(3e5, 13.5e5)#
+s=plot_swapped_ld_fitness(traits, 'ZOOX', ld.col= ld.col, legend.pos=F, YLIM=yl, XLAB=dlXLAB)#
+text(x=-2, y=10e5, labels=paste("R2 =", paste(s[1,2], "n/s", sep='')), cex=1, col=color.set[2]) #
+text(x=2, y=4e5, labels=paste("R2 =", paste(s[2,2], "&", sep='')), cex=1, col=color.set[3])  #
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)", YLIM=yl)
+#-------- PLOT FOR OTHER DATASETS ---------##
+#
+#PLOT RESULTS#
+#pick the dataset#
+clim.df = clim.snp
+#plot#
+XLAB = 'GBM Similarity'#
+XLAB = 'GBM Clone-similarity'#
+XLAB = 'SNP Similarity'#
+XLAB = 'GE Similarity'#
+quartz()#
+plot.subs=T#
+par(mfrow=c(1,1))#
+my_boxplot(clim.df, 'z', index='treat', YLAB=XLAB)#
+par(mfrow=c(2,3))#
+plot_acclim_fitness(clim.df, 'GAIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB='Weight Gain (%)')#
+plot_acclim_fitness(clim.df, 'CARB', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Carb. (mg/cm2)")#
+plot_acclim_fitness(clim.df, 'PROTEIN', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Protein (mg/cm2)" )#
+plot_acclim_fitness(clim.df, 'LIPID', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Lipid. (mg/cm2)")#
+plot_acclim_fitness(clim.df, 'ZOOX', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Symbionts. (cells/ul)")#
+s=plot_acclim_fitness(clim.df, 'fitpc1', 'z', plot.subs=plot.subs, XLAB=XLAB, YLAB="Fitness PC1")
+#plot individual#
+head(traits)#
+xcol = 'snp.ld1'#
+ycol = 'ZOOX'
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = F, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)")
+plot_ld_fitness2= function(traits, fit.proxy, ld.col, legend.pos='topright', plot.natives = T, YLAB=fit.proxy, XLAB=ld.col, YLIM=NULL, XLIM=NULL){#
+	if (plot.natives){#
+		plot(traits[,fit.proxy]~traits[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)#
+		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)#
+		kk=plot_sub_lm(traits, fit.proxy, ld.col, "KK", color.set[1], LINE=F, CEX=.8)#
+		oo=plot_sub_lm(traits, fit.proxy, ld.col, "OO", color.set[4], LINE=F, CEX=.8)#
+	}#
+	else{#
+		sub=rbind(traits[traits$treat=="KO",], traits[traits$treat=="OK",])#
+		plot(sub[,fit.proxy]~ sub[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM)#
+		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)#
+	}#
+	ko=plot_sub_lm(traits, fit.proxy, ld.col, "KO", color=color.set[2], line.col='deepskyblue3')#
+	ok=plot_sub_lm(traits, fit.proxy, ld.col, "OK", color=color.set[3], line.col='orange3')#
+	# legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)#
+	if (plot.natives){stat.res=rbind(kk, oo, ko, ok)}#
+	else{stat.res=rbind(ko, ok)}#
+	colnames(stat.res) = c('treat', 'R2', "p.value")#
+	return(stat.res)#
+}
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = F, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)")
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = F, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)", XLIM=c(-5, 5))
+plot_ld_fitness2= function(traits, fit.proxy, ld.col, legend.pos='topright', plot.natives = T, YLAB=fit.proxy, XLAB=ld.col, YLIM=NULL, XLIM=NULL){#
+	if (plot.natives){#
+		plot(traits[,fit.proxy]~traits[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM, xlim=XLIM)#
+		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)#
+		kk=plot_sub_lm(traits, fit.proxy, ld.col, "KK", color.set[1], LINE=F, CEX=.8)#
+		oo=plot_sub_lm(traits, fit.proxy, ld.col, "OO", color.set[4], LINE=F, CEX=.8)#
+	}#
+	else{#
+		sub=rbind(traits[traits$treat=="KO",], traits[traits$treat=="OK",])#
+		plot(sub[,fit.proxy]~ sub[,ld.col], bg=color.set, pch=26, mgp=MGP, xlab=XLAB, ylab='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS, ylim=YLIM, xlim=XLIM)#
+		title(ylab=YLAB, line= YLINE.POS, cex.lab=CEX.AXIS)#
+	}#
+	ko=plot_sub_lm(traits, fit.proxy, ld.col, "KO", color=color.set[2], line.col='deepskyblue3')#
+	ok=plot_sub_lm(traits, fit.proxy, ld.col, "OK", color=color.set[3], line.col='orange3')#
+	# legend(legend.pos, c('KK', 'KO', 'OK', 'OO'), pt.bg=color.set, pch=21)#
+	if (plot.natives){stat.res=rbind(kk, oo, ko, ok)}#
+	else{stat.res=rbind(ko, ok)}#
+	colnames(stat.res) = c('treat', 'R2', "p.value")#
+	return(stat.res)#
+}
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = F, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)", XLIM=c(-5, 5))
+head(traits)
+zdat = traits[,c('ZOOX','treat', 'gbm.ld1', 'snp.ld1')]
+traits
+treatMns = tapply(zdat$ZOOX, INDEX=zdat$treat)
+treatMns
+treatMns = tapply(zdat$ZOOX, INDEX=zdat$treat, mean)
+treatMns
+zdat = traits[!is.na(traits$ZOOX),c('ZOOX','treat', 'gbm.ld1', 'snp.ld1')]
+treatMns = tapply(zdat$ZOOX, INDEX=zdat$treat, mean)
+treatMns
+?boxplot
+boxplot(zdat$ZOOX~zdat$treat)
+treatSes = tapply(zdat$ZOOX, INDEX=zdat$treat, std.error)
+library(plotrix)
+treatSes = tapply(zdat$ZOOX, INDEX=zdat$treat, std.error)
+treatSes
+x=c(1:length(treatMns))
+my_boxplot(zdat, 'ZOOX', "treat", YLAB='Match')
+df=zdat
+df=zdat#
+ycol='ZOOX'#
+index='treat'
+b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
+YLAB="Symbionts. (cells/ul)"
+b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
+my_boxplot(zdat, 'ZOOX', "treat", YLAB="Symbionts. (cells/ul)")
+colors =get.cols(df[,'treat'])#
+	uni.treats = unique(df[,'treat'])
+uni.treats
+uni.treats = as.factor(unique(df[,'treat']))
+uni.treats
+xs=as.numeric(uni.treats)
+xs
+uni.treats = as.factor(unique(df[,'treat']))[c('KK', 'OK', 'KO', 'OO')]
+uni.treats
+uni.treats = as.factor(unique(df[,'treat']))
+uni.treats
+uni.treats = as.factor(unique(df[,'treat']))[c(1,3,2,4)]
+uni.treats
+points(df[,xcol]~jitter(as.numeric(xs)), pch=21, bg=colors, cex=1.5)
+points(df[,ycol]~jitter(as.numeric(xs)), pch=21, bg=colors, cex=1.5)
+ycol='ZOOX'
+df[,ycol]
+b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)#
+	colors =get.cols(df[,'treat'])#
+	uni.treats = as.factor(unique(df[,'treat']))#
+	xs=as.numeric(uni.treats)#
+	points(df[,ycol]~jitter(as.numeric(xs)), pch=21, bg=colors, cex=1.5)
+xs
+xs=as.numeric(as.factor(df[,index]))
+points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)
+zdat
+df=rbind(df[df[,treat]=="KK",], df[df[,treat]=="OK",])
+df=rbind(df[df[,'treat']=="KK",], df[df[,'treat']=="OK",])
+df
+df=zdat
+odf=rbind( rbind(df[df[,'treat']=="KK",], df[df[,'treat']=="OK",]), rbind(df[df[,'treat']=="KO",], df[df[,'treat']=="OO",]) )
+b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)#
+	colors =get.cols(df[,'treat'])#
+	uni.treats = as.factor(unique(df[,'treat']))#
+	xs=as.numeric(as.factor(df[,index]))#
+	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)
+?boxplot
+levels(as.factor(zdat$treat))
+index='treat'
+df[,index] = as.factor(df[,index])
+levels(df[,index])
+levels(df[,index]) = c("KK", "OK", "KO", "OO")
+levels(df[,index])
+b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)#
+	colors =get.cols(df[,'treat'])#
+	uni.treats = as.factor(unique(df[,'treat']))#
+	xs=as.numeric(as.factor(df[,index]))#
+	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)
+b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)
+colors =get.cols(df[,'treat'])
+colors
+colors =get.cols(as.character(df[,'treat']))
+colors
+uni.treats = as.factor(unique(df[,'treat']))#
+	xs=as.numeric(as.factor(df[,index]))#
+	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = T, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)", XLIM=c(-5, 5))
+my_boxplot(zdat, 'ZOOX', "treat", YLAB="Symbionts. (cells/ul)")
+my_boxplot = function(df, ycol, index, YLAB='Match'){#
+	df[,index] = as.factor(df[,index])#
+	# levels(df[,index]) = c("KK", "OK", "KO", "OO")#
+	b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)#
+	colors =get.cols(as.character(df[,'treat']))#
+	uni.treats = as.factor(unique(df[,'treat']))#
+	xs=as.numeric(as.factor(df[,index]))#
+	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)#
+}
+my_boxplot(zdat, 'ZOOX', "treat", YLAB="Symbionts. (cells/ul)")
+my_boxplot = function(df, ycol, index, YLAB='Match'){#
+	df[,index] = as.factor(df[,index])#
+	# levels(df[,index]) = c("KK", "OK", "KO", "OO")#
+	b=boxplot(df[,ycol]~df[,index], ylab=YLAB, mgp=MGP, outline=T, pch='', cex.axis= CEX.AXIS, cex.lab=CEX.AXIS)#
+	colors =get.cols(as.character(df[,'treat']))#
+	uni.treats = as.factor(unique(df[,'treat']))#
+	xs=as.numeric(as.factor(df[,index]))#
+	points(df[,ycol]~jitter(xs), pch=21, bg=colors, cex=1.5)#
+}
+head(zdat)
+mn.gbm = tapply(zdat$gbm.ld1, INDEX=treat)
+mn.gbm = tapply(zdat$gbm.ld1, INDEX='treat')
+mn.gbm = tapply(zdat$gbm.ld1, INDEX=zdat$treat)
+mn.gbm
+mn.gbm = tapply(zdat$gbm.ld1, INDEX=zdat$treat, mean)
+mn.snp = tapply(zdat$gbm.ld1, INDEX=zdat$treat, mean)
+kdist.gbm = abs(zdat$gbm.ld1 - mn.gbm["KK"])
+plot(kdist.gbm~zdat$ZOOX)
+plot(kdist.gbm~zdat$ZOOX, pch=21, bg=get.cols(zdat$treat))
+plot(zdat$ZOOX~ kdist.gbm, pch=21, bg=get.cols(zdat$treat))
+plot(zdat$ZOOX~zdat$gbm.ld1, pch=21, bg=get.cols(zdat$treat))
+plot(zdat$ZOOX~zdat$snp.ld1, pch=21, bg=get.cols(zdat$treat))
+s=plot_ld_fitness2(traits, ycol, ld.col= xcol, plot.natives = T, XLAB= dsXLAB, YLAB="Symbionts. (cells/ul)", XLIM=c(-5, 5))
+ll=load("datasets/bayRT_rlog_conditions_traits.RData")
+ll
+head(traits)
+write.table(traits, file="datasets/bayRT_rlog_conditions_traits.tsv")
 setwd("~/gitreps/reciprocal_transplant_methylation/bisulfite_validation/")#
 source("~/gitreps/reciprocal_transplant_methylation/scripts/bisulfite_functions.R")#
+source("~/gitreps/reciprocal_transplant_methylation/scripts/reciprocal_methylation_project_functions.R")#
+lnames = load("../datasets/ProteinTable.Rdata")#
+lnames = load("../datasets/deseqObjects_GENEBODIES_promoter1000_200.Rdata")#
+#
+library(DESeq2)#
 library(reshape)#
 library(plotrix)#
+#---------- LOOK AT GENES WITH EXPECTED ORIGIN EFFECTS ----------##
+lnames=load("../datasets/bisulfite_dat.Rdata")#
+lnames#
+#locus 13#
+par(mfrow=c(1,2))#
+res=plot.mean.meth(d, 'locus13', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus13', 'ori', 'By Origin')#
+#locus 14#
+res=plot.mean.meth(d, 'locus14', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus14', 'ori', 'By Origin', plus=2)#
+#locus 15 (only has a single Orpheus sample, do not use)#
+# res=plot.mean.meth(dat, 'locus15', 'ori', 'methPct', 'Origin')#
+# gene.meth.barplot(dat, 'locus15', 'ori', 'By Origin')#
+#locus 16#
+res=plot.mean.meth(d, 'locus16', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus16', 'ori', 'By Origin', plus=.75)#
 #
-#------------ UPLOAD THE BISULFITE DATA ------------##
+#locus 17 (only has a single representative originating from Orpheus do not use)#
+# res=plot.mean.meth(d, 'locus17', 'ori', 'methPct', 'Origin')#
+# gene.meth.barplot(d, 'locus17', 'ori', 'By Origin')#
 #
-#upload sample name spreadsheet#
-snames = read.csv('data/sample_names.csv')#
+#locus 19#
+res=plot.mean.meth(d, 'locus19', 'ori', 'methPct', 'Origin')#
+gene.meth.barplot(d, 'locus19', 'ori', 'By Origin', plus=.75)#
 #
-#upload bismark data#
-d = read.table('data/all_PE_bismark_results.tsv', sep="\t", header = T) #(see Bisulfite_amplicon_data_process_Walkthrough.txt to generate)#
-head(snames)#
-head(d)#
-#------------ FILTER AND FORMAT THE BISULFITE DATA ------------##
+#plot the mbd-seq data for each of the above genes#
+bsgenes#
+ori.genes = c('LOC107327073', 'LOC107356898', 'LOC107356899', 'LOC107347512')#
+for (g in ori.genes){#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+}#
+#---------- LOOK AT GENES WITH EXPECTED TRANSPLANT EFFECTS ----------##
 #
-#remove lines with fewer than 50 reads
-sums=d$methReads + d$UnmethReads
-sums
-d0=d
-d=d[sums>50,]
-dim(d0)
-dim(d)
-head(d)
-nrow(d)
-4472-2450
+#locus18#
+##Note that locus 18 only worked for samples originating in Keppels.#
+#Don't trust this one#
+# res=plot.mean.meth(dat, 'locus18', 'trans', 'methPct', 'Transplant')#
+# plot.mean.pair.diff(dat, 'locus18', 'trans', 'methPct', 'Origin', 'K')#
+# gene.meth.barplot(dat, 'locus18', 'trans', 'Transplant')#
+#
+#locus23#
+par(mfrow=c(1,3))#
+res=plot.mean.meth(d, 'locus23', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus23', 'trans', 'methPct', 'Origin', 'K')#
+g=gene.meth.barplot(d, 'locus23', 'trans', 'Transplant', plus=.75)#
+#locus24#
+res=plot.mean.meth(d, 'locus24', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus24', 'trans', 'methPct', 'Origin', 'K')#
+gene.meth.barplot(d, 'locus24', 'trans', 'Transplant')#
+#
+#locus25#
+res=plot.mean.meth(d, 'locus25', 'trans', 'methPct', 'Transplant')#
+plot.mean.pair.diff(d, 'locus25', 'trans', 'methPct', 'Origin', 'K')#
+gene.meth.barplot(d, 'locus25', 'trans', 'Transplant', plus=.1)#
+#
+#plot the mbd-seq data for these#
+bsgenes#
+trans.genes = bsgenes[bsgenes$effect == 'transplant', 'gene']#
+for (g in trans.genes){#
+	mdat = named_plotcounts(dds.t, na.omit(traco)[g,], INTGROUP='transplant')#
+}#
+#---------- TEST CORRELATION BETWEEN DIFFERENCE IN MEAN MBD-SEQ COUNT AND BISULFITE METH PCT ----------##
+#
+#### FOR ORIGIN EFFECTS ####
+#
+#set up two different gene ids#
+all.genes = bsgenes$gene#
+bs.names = bsgenes$primerset#
+ori.names = bsgenes$primerset[bsgenes$effect=='origin']#
+#
+#get differences for MBDseq and bisulfite seq for each gene#
+mbd.diffs = c()#
+bs.diffs = c()#
+for (g in all.genes){#
+	#get difference of means for mbd normalized counts#
+	mdat = named_plotcounts(dds.o, na.omit(orico)[g,], INTGROUP='origin')#
+	mns = tapply(mdat$count, mdat$origin, mean)#
+	diff = mns['K'] - mns['O']#
+	mbd.diffs = append(mbd.diffs, diff)#
+	#get the difference in mean percent methylation#
+	bs.locus=bsgenes[bsgenes$gene==g,'locus']#
+	lsub = d[d$locus == bs.locus,]#
+	mns = tapply(lsub$methPct, lsub$ori, mean)#
+	diff = mns['K'] - mns['O']#
+	bs.diffs = append(bs.diffs, diff)#
+}#
+#
+#assemble results#
+ores = data.frame(mbd.diffs, bs.diffs, all.genes, bs.names)#
+colors = ores$bs.names#
+colors[colors %in% ori.names]<-19#
+colors[!colors %in% ori.names]<-1#
+colnames(ores) = c('mbd.diffs', 'bs.diffs', 'gene', 'bs.names')#
+lm1=lm(ores$mbd.diffs~ores$bs.diffs)#
+R2=round(summary(lm1)$r.squared, digits=2)#
+summary(lm1)#
+#
+#plot#
+plot(ores$mbd.diffs~ores$bs.diffs, xlab = "Mean(K) - Mean(O) Bisulfite", ylab = "Mean(K) - Mean(O) MBD-seq", pch=colors, cex=2)#
+abline(lm1, col='red')#
+legend('bottomright', c('significant', 'not significant'), title='Origin Effect', pt.bg=c('black', 'white'), pch=21)#
+text(x=-4.8, y=28, bquote("R"^2 ~ "=" ~ .(R2) * "***"), cex=1.2)#
+#
+#### FOR TRANSPLANT EFFECTS ####
+all.genes = bsgenes$gene#
+bs.names = bsgenes$primerset#
+trans.names = bsgenes$primerset[bsgenes$effect=='transplant']
+gene.meth.barplot(d, 'locus25', 'trans', 'Transplant', plus=.1)
+plot.new()
+legend("center", c("Orpheus", "Keppel"), )
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'))
+plot.new()#
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'))
+plot.new()#
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'))
+?legend
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Origin")
+plot.new()#
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Origin")
+plot.new()#
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Transplantation Site")
+plot.new()#
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Transplantation Site")
+plot.new()#
+legend("center", c("Orpheus", "Keppel"), fill=c('dodgerblue', 'firebrick'), title="Origin")

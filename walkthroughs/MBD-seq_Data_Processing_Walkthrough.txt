@@ -139,7 +139,7 @@ bowtie2-build adig_zoox_combo.fa adig_zoox_combo.fa
 #map the reads
 GENOME_REF="/work/02260/grovesd/lonestar/adig_genome/adig_zoox_combo.fa"
 >maps; for file in *.trim; do echo "bowtie2 --local -x $GENOME_REF -U $file -S $file.sam --no-unal -k 5" >> maps; done
-launcher_creator.py -n maps -j maps -q normal -t 24:00:00 -q normal -a $allo -N 2 -w 48
+launcher_creator.py -n maps -j maps -q normal -t 48:00:00 -q normal -a $allo -N 4 -w 24
 sbatch maps.slurm
 
 
@@ -172,14 +172,14 @@ sbatch convertSort.slurm
  OUTPUT=${file/.bam/}_dupsRemoved.bam\
  METRICS_FILE=${file/.bam/}_dupMetrics.txt\
  REMOVE_DUPLICATES=true" >> removeDups; done
-launcher_creator.py -n removeDups -j removeDups -t 10:00:00 -q normal -N 1 -a $allo -w 2
+launcher_creator.py -n removeDups -j removeDups -t 24:00:00 -q normal -N 4 -w 2 -a $allo
 sbatch removeDups.slurm
 
 
 #GATHER THE REMOVAL METRIC DATA
->metRemovalMetrics.tsv;for file in *m_reduced*dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8); echo -e "$file\t$pct" >> metRemovalMetrics.tsv; done
+>metRemovalMetrics.tsv;for file in *m.trim_Sorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8); echo -e "$file\t$pct" >> metRemovalMetrics.tsv; done
  
->ubRemovalMetrics.tsv;for file in *ub.trimSorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8)
+>ubRemovalMetrics.tsv;for file in *ub.trim_Sorted_dupMetrics.txt; do pct=$(grep "Unknow" $file | cut -f 8)
  echo -e "$file\t$pct" >> ubRemovalMetrics.tsv ; done
 
 
@@ -203,12 +203,26 @@ sbatch convertback.slurm
 module load htseq
 #run htseq
 >doCounts; for file in *dupsRemoved.sam; do echo "htseq-count\
- -f sam -t CDS -m intersection-nonempty --stranded=no -i gene $file ref_Adig_1.1_scaffolds_promoters_up1000_down200.gff3 > ${file/reduced.fastq_Sorted_dupsRemoved.sam/CDS_counts.gff}"\
+ -f sam -t CDS -m intersection-nonempty --stranded=no --secondary-alignments ignore -i gene $file ref_Adig_1.1_scaffolds_promoters_up1000_down200.gff3 > ${file/.trim_Sorted_dupsRemoved.sam/CDS_counts.gff}"\
  >> doCounts; done
-
+ 
 launcher_creator.py -n doCounts -j doCounts -q normal -t 5:00:00 -a $allo -e $email -N 1 -w 48
 sbatch doCounts.slurm
 
+#assemble the gene counts into a single table
+assemble_htseq_counts.py -i *exon_counts.gff -o CDS_counts_11-14-16.tsv -pos 1 -delim .
+
+#-------------- or do for full genes ---------------#
+ln -s /work/02260/grovesd/stampede2/adig_genome/ref_Adig_1.1_scaffolds.gff3 .
+module load htseq
+#run htseq
+>doCounts; for file in *dupsRemoved.sam; do echo "htseq-count\
+ -f sam -t gene -m intersection-nonempty --stranded=no --secondary-alignments ignore -i gene $file ref_Adig_1.1_scaffolds.gff3 > ${file/trim_Sorted_dupsRemoved.sam/GENE_counts.gff}"\
+ >> doCounts; done
+
+#assemble the gene counts into a single table
+assemble_htseq_counts.py -i *GENE_counts.gff -o GENE_counts_3-6-18.tsv -pos 1 -delim .
+#---------------------------------------------------#
 
 #assemble the gene counts into a single table
 assemble_htseq_counts.py -i *exon_counts.gff -o CDS_counts_11-14-16.tsv -pos 1 -delim .
@@ -216,80 +230,6 @@ assemble_htseq_counts.py -i *exon_counts.gff -o CDS_counts_11-14-16.tsv -pos 1 -
 #clean lines
 sed -i.bak 's/_exon_counts//g' CDS_counts_11-14-16.tsv
 
-
-#get promoter locations from the gff
-pull_promoters.py -i ref_Adig_1.1_scaffolds.gff3 -o adig_promoters.gff -buffer 0
-
-#get the mapping counts for the promoters
-mkdir promoter_counts
-cd promoter_counts
-ln -s ../*final.sam .
->promoterCounts; for file in $(ls *final.sam); do echo "htseq-count\
- -f sam -t gene -m intersection-nonempty --stranded=no -i gene $file adig_promoters_buffrd300.gff > ${file/_final.sam/_promoter_counts.gff}"\
- >> promoterCounts; done
-
-launcher_creator.py -n promoterCounts -j promoterCounts -q normal -t 5:00:00 -a $allo -e $email -N 2 -w 48
-sbatch promoterCounts.slurm
-
-
-
-#assemble the promoter counts into a single table
-assemble_htseq_counts.py -i *promoter_counts.gff -o all_promoter_counts.txt -pos 1 -delim .
-
-
-
-#############################################################################
-################## GETTING START POINT DENSITIES ACROSS CONTIGS #############
-#############################################################################
-#(data for James Scott)
-#This can be obtained directly from the sam files once duplicates are removed
-#we want to extract the good reads from each sam file
-#column 2 in the sam file has the FLAG, which gives characters of read mapping for that line
-#0 indicates a single end read that mapped in the forward direction
-#16 indicates a single end read that mapped in the reverse direction
-#gather only these reads for each file
-
-#---------------------- TESTING -----------------------
-# First make sure that this is right by pulling sequences 
-#and comparing the results with what picard thinks the duplication frequency is
-#pull good reads for dups removed file
-cat KK10_2m.trimSorted_dupsRemoved.sam |\
-awk 'BEGIN {print "contig\tposition"}
-{if ($2==0){print $3"\t"$4}}
-{if($2==16){print $3"\t"$4}}' > KK10_density.tsv
-
-#pull them for the file with duplicates still in it
-cat KK10_2m.trim.sam |awk 'BEGIN {print "contig\tposition"}
-{if ($2==0){print $3"\t"$4}}
-{if($2==16){print $3"\t"$4}}' > KK10_DUP_density.tsv
-
-cat KK10_density.tsv | wc -l
-cat KK10_DUP_density.tsv | wc -l
-#take 1 - the difference
-
-grep KK10 metRemovalMetrics.tsv
-
-#should be identical
-#-------------------------------------------------------
-
-
-> pull_densities
-for file in *m.trimSorted_dupsRemoved.sam
-do echo "cat $file | \
-awk 'BEGIN {print \"contig\tposition\"}\
-{if (\$2==0){print \$3\"\t\"\$4}}\
-{if(\$2==16){print \$3\"\t\"\$4}}'>${file/m.trimSorted_dupsRemoved.sam/}_positions.tsv" >> pull_densities
-done
-
-
-fasta_sequence_characters.py -fa adi_v1.0.scaffold.fa | grep -v "CpG count" > Adigitifera_reference_genome_contig_lengths.tsv
-
-#build a .Rdata object of the dataframes
-density_list.R
-
-
-#make readable for anyone
-chmod a=rx positions.Rdata 
 
 
 ##################################################################
